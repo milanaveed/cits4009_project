@@ -1,0 +1,115 @@
+---
+title: "CITS4009 - Project 1"
+author: "Mila Zhang (22756463)"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Introduction to YouTube dataset
+
+This project analises the data set of [Global YouTube Statistics 2023](https://www.kaggle.com/datasets/nelgiriyewithana/global-youtube-statistics-2023) and it can be obtained from the Kaggle platform.
+
+**to be adjusted**
+
+This dataset offers a perfect avenue to analyze and gain valuable insights from the luminaries of the platform. With comprehensive details on top creators' subscriber counts, video views, upload frequency, country of origin, earnings, and more, this treasure trove of information is a must-explore for aspiring content creators, data enthusiasts, and anyone intrigued by the ever-evolving online content landscape. Immerse yourself in the world of YouTube success and unlock a wealth of knowledge with this extraordinary dataset.
+
+**to be adjusted**
+
+### Data loading and setting up
+
+## Loading libraries
+```{r message=FALSE, warning=FALSE}
+library(shiny)
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(ggthemes)
+library(numform)
+library(treemapify)
+library(timeDate)
+library(lubridate)
+library(reshape2)
+library(ca)
+```
+
+## Setting up a plotting theme so that all charts look coherent
+```{r}
+color_theme <- theme_few() + # Theme based on S. Few's "Practical Rules for Using Color in Charts"
+                  theme(plot.title = element_text(color = "darkred")) +
+                  theme(strip.text.x = element_text(size = 14, colour = "#202020")) +
+                  theme(plot.margin=margin(10,30,10,30))
+```
+
+
+## Loading the main data
+```{r echo=TRUE}
+data.path <- './data/youtube_UTF_8.csv'
+df <- read.csv(data.path)
+summary(df)
+```
+
+
+## Defining shiny app UI
+```{r echo=TRUE}
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+
+    # Application title
+    titlePanel("Old Faithful Geyser Data"),
+
+    # Sidebar with a slider input for number of bins 
+    sidebarLayout(
+        sidebarPanel(
+            sliderInput("bins",
+                        "Number of bins:",
+                        min = 1,
+                        max = 50,
+                        value = 30)
+        ),
+
+        # Show a plot of the generated distribution
+        mainPanel(
+           plotOutput("distPlot")
+        )
+    )
+)
+```
+
+
+
+## Lauching shiny app
+```{r echo=TRUE}
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+
+    output$distPlot <- renderPlot({
+        # generate bins based on input$bins from ui.R
+        x    <- faithful[, 2]
+        bins <- seq(min(x), max(x), length.out = input$bins + 1)
+
+        # draw the histogram with the specified number of bins
+        hist(x, breaks = bins, col = 'darkgray', border = 'white',
+             xlab = 'Waiting time to next eruption (in mins)',
+             main = 'Histogram of waiting times')
+    })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
+```
+
+## Analysing subscribers
+```{r}
+ggplot(df) + geom_histogram(mapping=aes(x=subscribers)) + xlim(boxplot.stats(df$subscribers)$stats[1], boxplot.stats(df$subscribers)$stats[4]) + color_theme
+```
+
+
+use if statements to check which x variable is selected and shows bar chart or histogram or boxplot accordingly
+
+
+
+
