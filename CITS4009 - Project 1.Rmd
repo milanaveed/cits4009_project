@@ -81,32 +81,114 @@ write.csv(df_filtered, "./data/youtube_data_cleaned")
 ## Distribution of Earnings
 Since "lowest_monthly_earnings" and "highest_monthly_earnings" are right-skewed variables, we will use two histograms to analyze each of the distribution: one with a log10 scale and one with a truncated linear scale.
 ```{r}
-df_finite <- df %>% filter(is.finite(lowest_monthly_earnings))
-
 p1 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
   geom_histogram(aes(y=..density..), binwidth= 0.05, fill = "grey") +
   geom_density(color='darkred')+
-  scale_x_continuous(trans='log10')+
+  scale_x_log10(breaks=c(100,2000,25000,200000))+
+  annotate("text", x = 100, y = 0.6, label = paste("The lowest monthly earning peaks"," at around 25000", sep="\n"))+
   ggtitle("Distribution of Lowest Monthly Earnings (Log-scale)") +
   color_theme
 
+lme_Q1 <- boxplot.stats(df$lowest_monthly_earnings)$stats[2]
+lme_Q3 <- boxplot.stats(df$lowest_monthly_earnings)$stats[4]
+lme_IQR <- lme_Q3-lme_Q1
+lme_Q4 <- lme_Q3 + 1.5*lme_IQR
+
 p2 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
-  geom_histogram(aes(y=..density..), binwidth=500, fill = "grey") +
+  geom_histogram(aes(y=..density..), binwidth=2000, fill = "grey") +
   geom_density(color='darkred')+
-  xlim(0, boxplot.stats(df$lowest_monthly_earnings)$stats[5]) + 
-  ylim(0, 0.00006) +
+  scale_x_continuous(breaks=c(200000,500000))+
+  #xlim(0, lme_Q4) +
+  xlim(0,6e+05)+
+  ylim(0, 0.00004) +
+  annotate("text", x = 200000, y = 2e-05, label = paste("Most of the distribution is concentrated", "at the low end: less than 200000", sep="\n"))+
   ggtitle("Distribution of Lowest Monthly Earnings") +
   color_theme
 
 grid.arrange(p1, p2, ncol=1)
 ```
-
-
-
+Most of the distribution is concentrated at the low end and less than 200000. And the lowest monthly earning peaks at around 25000.
 
 ```{r}
-ggplot(df) + geom_histogram(mapping=aes(x=subscribers)) + xlim(boxplot.stats(df$subscribers)$stats[1], boxplot.stats(df$subscribers)$stats[4]) + color_theme
+p1 <- ggplot(df, aes(x = highest_monthly_earnings)) +
+  geom_histogram(aes(y=..density..), binwidth= 0.05, fill = "grey") +
+  geom_density(color='darkred')+
+  scale_x_log10(breaks=c(100,2000,25000,400000))+
+  #annotate("text", x = 100, y = 0.7, label = paste("The lowest monthly earning peaks at around 25000"))+
+  ggtitle("Distribution of Highest Monthly Earnings (Log-scale)") +
+  color_theme
+
+hme_Q1 <- boxplot.stats(df$highest_monthly_earnings)$stats[2]
+hme_Q3 <- boxplot.stats(df$highest_monthly_earnings)$stats[4]
+hme_IQR <- hme_Q3-hme_Q1
+hme_Q4 <- hme_Q3 + 1.5*hme_IQR
+
+p2 <- ggplot(df, aes(x = highest_monthly_earnings)) +
+  geom_histogram(aes(y=..density..), binwidth=5000, fill = "grey") +
+  geom_density(color='darkred')+
+  xlim(0, hme_Q4) +
+  ylim(0, 0.000005) +
+  #annotate("text", x = 200000, y = 2e-05, label = paste("Most of the distribution is concentrated", "at the low end: less than 200000", sep="\n"))+
+  ggtitle("Distribution of Highest Monthly Earnings") +
+  color_theme
+
+grid.arrange(p1, p2, ncol=1)
 ```
+There seem to be some outliers between value 1,000,000 and 1,500,000.
+
+## Earnings by category
+Next we analyze how earnings differ across different YouTube channel categories.
+```{r}
+# Calculate median for each category
+df$median_earnings_category <- with(df, ave(highest_yearly_earnings, category, FUN=median))
+
+# Create the boxplot
+ggplot(df, aes(x = reorder(category, median_earnings_category), y = highest_yearly_earnings)) +
+  geom_boxplot() +
+  coord_flip() +
+  ggtitle("Highest Yearly Earnings by Category (Ordered by Median)") +
+  color_theme
+```
+All categories have similar median values except Autos & Vehicles, whose median is significantly larger than others. Pets & Animals channel has the smallest median value of highest yearly earnings.
+
+****
+TODO: take out the value "nan" missing values
+checking for NaN values in "a" vector:
+any(is.nan(a))
+****
+
+## Earnings by country
+```{r}
+ggplot(df, aes(x = Country, y = highest_yearly_earnings)) +
+  geom_boxplot() +
+  coord_flip() +
+  ggtitle("Highest Yearly Earnings by Country")+
+  color_theme
+```
+TODO: 由大到小排序，只展示20行
+
+```{r}
+# Calculate median for each country and filter the top 20
+top_countries <- df %>%
+  group_by(Country) %>%
+  summarise(median_earnings_country = median(highest_yearly_earnings, na.rm = TRUE)) %>%
+  arrange(-median_earnings_country) %>%
+  head(20) %>%
+  pull(Country)
+
+# Filter the original dataframe to only include these top 20 countries
+df_filtered <- df %>% filter(Country %in% top_countries)
+
+# Create the boxplot
+ggplot(df_filtered, aes(x = reorder(Country, median_earnings_country), y = highest_yearly_earnings)) +
+  geom_boxplot() +
+  coord_flip() +
+  ggtitle("Highest Yearly Earnings by Country (Top 20 by Median)") +
+  color_theme
+```
+
+
+## Geographical plotting
 
 
 # EDA: Geospatial information
