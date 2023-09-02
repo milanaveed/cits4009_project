@@ -1,7 +1,11 @@
 ---
 title: "CITS4009 - Project 1"
 author: "Mila Zhang (22756463)"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
 runtime: shiny
 ---
 
@@ -9,21 +13,15 @@ runtime: shiny
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### Introduction to YouTube dataset
+# Introduction to the YouTube dataset
 
 This project analises the data set of [Global YouTube Statistics 2023](https://www.kaggle.com/datasets/nelgiriyewithana/global-youtube-statistics-2023) and it can be obtained from the Kaggle platform.
 
-**to be adjusted**
+This data collection provides an opportunity to analyse and uncover valuable insights from leading YouTubers. Packed with comprehensive details on high-profile creators, this dataset serves as a treasure for those breaking into content creation, enthusiastic about data, and anyone interested in the constantly changing landscape of online content.
 
-This dataset offers a perfect avenue to analyze and gain valuable insights from the luminaries of the platform. With comprehensive details on top creators' subscriber counts, video views, upload frequency, country of origin, earnings, and more, this treasure trove of information is a must-explore for aspiring content creators, data enthusiasts, and anyone intrigued by the ever-evolving online content landscape. Immerse yourself in the world of YouTube success and unlock a wealth of knowledge with this extraordinary dataset.
-
-**to be adjusted**
-
-### Data loading and setting up
-
+# Performing ETL and setting up for plotting
 ## Loading libraries
 ```{r message=FALSE, warning=FALSE}
-library(shiny)
 library(ggplot2)
 library(gridExtra)
 library(dplyr)
@@ -36,7 +34,7 @@ library(reshape2)
 library(ca)
 ```
 
-## Setting up a plotting theme so that all charts look coherent
+## Setting up a plotting theme
 ```{r}
 color_theme <- theme_few() + # Theme based on S. Few's "Practical Rules for Using Color in Charts"
                   theme(plot.title = element_text(color = "darkred")) +
@@ -44,72 +42,85 @@ color_theme <- theme_few() + # Theme based on S. Few's "Practical Rules for Usin
                   theme(plot.margin=margin(10,30,10,30))
 ```
 
-
-## Loading the main data
-```{r echo=TRUE}
+## Extracting data
+```{r}
 data.path <- './data/youtube_UTF_8.csv'
 df <- read.csv(data.path)
+```
+
+## Data Overview
+### Using head() to analyze the data
+```{r}
+head(df)
+```
+
+### Using summary() to analyze the data
+```{r}
 summary(df)
 ```
 
+### Using str() to analyze the data??
 
-## Defining shiny app UI
-```{r echo=TRUE}
-# Define UI for application that draws a histogram
-ui <- fluidPage(
+## Transforming data
+Missing/invalid/sentinel/outlier data treatment, discretization, normalisation, log-scales and etc.
+### Cleaning data
 
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
+### Filtering data
 
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
+## Loading data
+Save the cleaned and transformed data
+```{r}
+write.csv(df_filtered, "./data/youtube_data_cleaned")
+```
 
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
-        )
-    )
-)
+# EDA: Content strategy analysis
+
+
+# EDA: Earnings analysis
+
+## Distribution of Earnings
+Since "lowest_monthly_earnings" and "highest_monthly_earnings" are right-skewed variables, we will use two histograms to analyze each of the distribution: one with a log10 scale and one with a truncated linear scale.
+```{r}
+df_finite <- df %>% filter(is.finite(lowest_monthly_earnings))
+
+p1 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
+  geom_histogram(aes(y=..density..), binwidth= 0.05, fill = "grey") +
+  geom_density(color='darkred')+
+  scale_x_continuous(trans='log10')+
+  ggtitle("Distribution of Lowest Monthly Earnings (Log-scale)") +
+  color_theme
+
+p2 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
+  geom_histogram(aes(y=..density..), binwidth=500, fill = "grey") +
+  geom_density(color='darkred')+
+  xlim(0, boxplot.stats(df$lowest_monthly_earnings)$stats[5]) + 
+  ylim(0, 0.00006) +
+  ggtitle("Distribution of Lowest Monthly Earnings") +
+  color_theme
+
+grid.arrange(p1, p2, ncol=1)
 ```
 
 
 
-## Lauching shiny app
-```{r echo=TRUE}
-# Define server logic required to draw a histogram
-server <- function(input, output) {
 
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
-    })
-}
-
-# Run the application 
-shinyApp(ui = ui, server = server)
-```
-
-## Analysing subscribers
 ```{r}
 ggplot(df) + geom_histogram(mapping=aes(x=subscribers)) + xlim(boxplot.stats(df$subscribers)$stats[1], boxplot.stats(df$subscribers)$stats[4]) + color_theme
 ```
 
 
-use if statements to check which x variable is selected and shows bar chart or histogram or boxplot accordingly
+# EDA: Geospatial information
+
+
+# EDA: Trend by time
 
 
 
 
+
+
+
+# Code for Shiny App
+```{r}
+
+```

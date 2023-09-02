@@ -1,7 +1,16 @@
 ---
 title: "CITS4009 - Project 1"
-author: Sergio Banchero (22565979)
-output: html_notebook
+author: "Sergio Banchero (22565979)"
+output:
+  html_document:
+    toc: yes
+    toc_depth: '5'
+    df_print: paged
+  html_notebook:
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: false
 ---
 
 ### Introduction

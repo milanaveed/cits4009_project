@@ -12,9 +12,9 @@ library(gridExtra)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-
+    
     # Application title
-    titlePanel("Old Faithful Geyser Data"),
+    titlePanel("Global YouTube Statistics 2023"),
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
