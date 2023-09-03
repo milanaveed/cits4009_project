@@ -33,6 +33,9 @@ ui <- fluidPage(
     )
 )
 
+# "use if statements to check which x variable is selected and shows bar chart or
+# histogram or boxplot accordingly"
+
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
@@ -47,6 +50,7 @@ server <- function(input, output) {
              main = 'Histogram of waiting times')
     })
 }
+
 
 # Run the application 
 shinyApp(ui = ui, server = server)

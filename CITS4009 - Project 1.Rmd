@@ -2,6 +2,8 @@
 title: "CITS4009 - Project 1"
 author: "Mila Zhang (22756463)"
 output: 
+  html_notebook: 
+    toc: yes
   html_document:
     toc: true
     toc_depth: 3
@@ -10,7 +12,11 @@ runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
 ```
 
 # Introduction to the YouTube dataset
@@ -59,7 +65,7 @@ head(df)
 ```
 
 ### Using summary() to analyze the data
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 summary(df)
 ```
 
@@ -162,7 +168,7 @@ any(is.nan(a))
 
 ## Earnings by country
 We can analyse the highest yearly earnings of the top 995 YouTube channels by country.
-```{r}
+```{r warning=FALSE}
 # Calculate median for each country
 df$median_earnings_country <- with(df, ave(highest_yearly_earnings, Country, FUN=median))
 
