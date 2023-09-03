@@ -187,18 +187,20 @@ The popular channel from Latvia has a distinctively higher value of highest year
 # EDA: Geospatial information
 
 ```{r}
-#数据准备
+# Data preparation
 visit.x<-df$Longitude
 visit.y<-df$Latitude  
 
-mp<-NULL #定义一个空的地图
-mapworld<-borders("world",colour = "gray50",fill="white") #绘制基本地图
-mp<-ggplot()+mapworld+ylim(-60,90) #利用ggplot呈现，同时地图纵坐标范围从-60到90
-mp2<-mp+geom_point(aes(x=visit.x,y=visit.y,size=df$highest_yearly_earnings),color="darkorange")+
+mp<-NULL #Create an empty map
+mapworld<-borders("world",colour = "gray50",fill="white") #Draw the map
+mp<-ggplot()+mapworld+ylim(-60,90) 
+mp2<-mp+geom_point(aes(x=visit.x,y=visit.y,size=df$highest_yearly_earnings),color="darkred")+
   scale_size(range=c(2,9))+
-  ggtitle("plot name")+theme(plot.title=element_text(size=25,color="red",face="italic"))+theme_grey(base_size = 32)  
-mp3<-mp2+theme(legend.position = "none") #将图例去掉
-mp3 #将地图呈现出来
+  ggtitle("Geospatial Information About Highest Yearly Earnings")+
+  theme(plot.title=element_text(size=25,color="red",face="italic"))+
+  theme_grey(base_size = 32)  
+mp3<-mp2+theme(legend.position = "none")
+mp3
 ```
 
 
