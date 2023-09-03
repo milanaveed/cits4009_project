@@ -45,11 +45,11 @@ library(maps)
 
 ## Setting up a plotting theme
 ```{r}
+my_color <- "#2061F2"
 color_theme <- theme_few() + # Theme based on S. Few's "Practical Rules for Using Color in Charts"
-                  theme(plot.title = element_text(color = "darkred")) +
+                  theme(plot.title = element_text(color = my_color)) +
                   theme(strip.text.x = element_text(size = 14, colour = "#202020")) +
-                  theme(plot.margin=margin(10,30,10,30),panel.background = element_rect(fill = "white"))
-                  
+                  theme(plot.margin=margin(10,30,10,30))
 ```
 
 ## Extracting data
@@ -86,6 +86,8 @@ Save the cleaned and transformed data
 # EDA: Content strategy analysis
 
 
+
+
 # EDA: Earnings analysis
 
 ## Distribution of earnings
@@ -93,7 +95,7 @@ Since "lowest_monthly_earnings" and "highest_monthly_earnings" are right-skewed 
 ```{r}
 p1 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
   geom_histogram(aes(y=..density..), binwidth= 0.05, fill = "grey") +
-  geom_density(color='darkred')+
+  geom_density(color= my_color)+
   scale_x_log10(breaks=c(100,2000,25000,200000))+
   annotate("text", x = 100, y = 0.6, label = paste("The lowest monthly earning peaks"," at around 25000", sep="\n"))+
   ggtitle("Distribution of Lowest Monthly Earnings (Log-scale)") +
@@ -106,7 +108,7 @@ lme_Q4 <- lme_Q3 + 1.5*lme_IQR
 
 p2 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
   geom_histogram(aes(y=..density..), binwidth=2000, fill = "grey") +
-  geom_density(color='darkred')+
+  geom_density(color=my_color)+
   scale_x_continuous(breaks=c(200000,500000))+
   #xlim(0, lme_Q4) +
   xlim(0,6e+05)+
@@ -122,7 +124,7 @@ Most of the distribution is concentrated at the low end and less than 200000. An
 ```{r}
 p1 <- ggplot(df, aes(x = highest_monthly_earnings)) +
   geom_histogram(aes(y=..density..), binwidth= 0.05, fill = "grey") +
-  geom_density(color='darkred')+
+  geom_density(color=my_color)+
   scale_x_log10(breaks=c(100,2000,25000,400000))+
   #annotate("text", x = 100, y = 0.7, label = paste("The lowest monthly earning peaks at around 25000"))+
   ggtitle("Distribution of Highest Monthly Earnings (Log-scale)") +
@@ -135,7 +137,7 @@ hme_Q4 <- hme_Q3 + 1.5*hme_IQR
 
 p2 <- ggplot(df, aes(x = highest_monthly_earnings)) +
   geom_histogram(aes(y=..density..), binwidth=5000, fill = "grey") +
-  geom_density(color='darkred')+
+  geom_density(color=my_color)+
   xlim(0, hme_Q4) +
   ylim(0, 0.000005) +
   #annotate("text", x = 200000, y = 2e-05, label = paste("Most of the distribution is concentrated", "at the low end: less than 200000", sep="\n"))+
@@ -182,11 +184,8 @@ ggplot(df, aes(x = reorder(Country, median_earnings_country), y = highest_yearly
 ```
 The popular channel from Latvia has a distinctively higher value of highest yearly earnings among all the countries.
 
-## Geographical plotting
-
-
 # EDA: Geospatial information
-
+With longitude and latitude provided in the dataset, we are able to visualise the country distribution in the aspect of earnings analysis.
 ```{r}
 # Data preparation
 visit.x<-df$Longitude
@@ -203,11 +202,9 @@ mp2<-mp+geom_point(aes(x=visit.x,y=visit.y,size=df$highest_yearly_earnings),colo
 mp3<-mp2+color_theme+theme(legend.position = "none")
 mp3
 ```
-
+Countries with high yearly earnings from the channels are mainly located in Europe, South Africa, the middle east and the South-East Asia.
 
 # EDA: Trend by time
-
-
 
 
 
