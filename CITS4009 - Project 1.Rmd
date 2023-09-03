@@ -101,6 +101,11 @@ After inspecting the occurrences of each value in the column Country, we found t
 
 #### Cleaning column category
 When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Category](#earnings-by-category), some values of `nan` were involved initially. We first turn them into NA values.
+```{r}
+df <- mutate(df,
+             category = ifelse(category=="nan", NA, category))
+df %>% count(category)
+```
 
 
 ### Filtering data
@@ -199,6 +204,14 @@ All categories have similar median values except Autos & Vehicles, whose median 
 
 
 ## Earnings by country {#earnings-by-country}
+```{r}
+# Compute median values using dplyr
+result <- df %>% 
+  group_by(Country) %>% 
+  summarise(median_earnings = median(highest_yearly_earnings, na.rm = TRUE))
+result
+```
+
 We can analyse the highest yearly earnings of the top 995 YouTube channels by country.
 ```{r warning=FALSE}
 # Calculate median for each country
