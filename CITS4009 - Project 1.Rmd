@@ -90,6 +90,16 @@ df %>% count(created_year)
 ```
 Now we have converted those invalid values into NA.
 
+
+#### Cleaning column category
+When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Category](#earnings-by-category), some values of `nan` were involved initially. We first turn them into NA values.
+```{r}
+df <- mutate(df,
+             category = ifelse(category=="nan", NA, category))
+df %>% count(category)
+```
+After inspecting the occurrences of each value in the column category, we found that there are 46 NA values. 
+
 #### Cleaning column Country
 When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Country](#earnings-by-country), some values of `nan` were involved initially. We first turn them into NA values.
 ```{r}
@@ -99,18 +109,39 @@ df %>% count(Country)
 ```
 After inspecting the occurrences of each value in the column Country, we found that there are 122 NA values. 
 
-#### Cleaning column category
-When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Category](#earnings-by-category), some values of `nan` were involved initially. We first turn them into NA values.
+#### Dealing with missing values in column Country and category
+When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Country](#earnings-by-country), a country named `NA` was displayed initially. We replace the NAs with a new category `Missing`.
 ```{r}
-df <- mutate(df,
-             category = ifelse(category=="nan", NA, category))
-df %>% count(category)
+df$Country.fix <- ifelse(is.na(df$Country),
+                  "Missing", df$Country)
+df$category.fix <- ifelse(is.na(df$category),
+                  "Missing", df$category)
+df %>% count(df$Country.fix)
+df %>% count(df$category.fix)
 ```
-
 
 ### Filtering data
 TODO:
-- take out the NA values in Country
+- take out the NA values in Country and category
+
+#### Removing row of NAs in column created_year
+****
+When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Country](#earnings-by-country), a country named `NA` was displayed initially. We remove the rows of Country with the value NA.
+We calculte the occurrences of NA in created_year and there are only 6 invalid values, and thus has small impact on the whole dataset. We can remove it safely.
+```{r}
+df <- df[!is.na(df$created_year),]
+```
+
+
+#### Removing row of NAs in column Country
+When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Country](#earnings-by-country), a country named `NA` was displayed initially. We remove the rows of Country with the value NA.
+```{r}
+# df_country <- df[!is.na(df$Country),]
+# df_country %>% count(Country)
+```
+
+
+
 ```{r}
 #template:
 #count_value_2 <- filter(data_counted, column1 == 2)$n
@@ -204,26 +235,36 @@ All categories have similar median values except Autos & Vehicles, whose median 
 
 
 ## Earnings by country {#earnings-by-country}
-```{r}
-# Compute median values using dplyr
-result <- df %>% 
-  group_by(Country) %>% 
-  summarise(median_earnings = median(highest_yearly_earnings, na.rm = TRUE))
-result
-```
+We can analyse the highest yearly earnings of the top 995 YouTube channels by country. There are too many countries in the dataset so we select 20 countries with the largest median value of highest yearly earnings. 
 
-We can analyse the highest yearly earnings of the top 995 YouTube channels by country.
+
 ```{r warning=FALSE}
 # Calculate median for each country
-df$median_earnings_country <- with(df, ave(highest_yearly_earnings, Country, FUN=median))
+df$median_earnings_country <- with(df, ave(highest_yearly_earnings, Country.fix, FUN=median))
+
+# Sort the data frame 
+df_median_earnings_country_des <- df %>%
+                                  arrange(desc(median_earnings_country))
+# Get unique country names
+unique_countries <- unique(df_median_earnings_country_des$Country)
+
+# Select the first 20 unique country names
+selected_countries <- unique_countries[1:20]
+
+# Get all rows of the top 20 countries
+top_20_country <- df_median_earnings_country_des[df_median_earnings_country_des$Country %in% selected_countries, ]
 
 # Create the boxplot
-ggplot(df, aes(x = reorder(Country, median_earnings_country), y = highest_yearly_earnings)) +
+ggplot(top_20_country, aes(x = highest_yearly_earnings, y = reorder(Country.fix, median_earnings_country))) +
   geom_boxplot() +
-  coord_flip() +
   ggtitle("Highest Yearly Earnings by Country (Ordered by Median)") +
   color_theme
 ```
+
+```{r}
+top_20_country
+```
+
 The popular channel from Latvia has a distinctively higher value of highest yearly earnings among all the countries.
 
 # EDA: Geospatial information
