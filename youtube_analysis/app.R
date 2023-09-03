@@ -12,9 +12,9 @@ library(gridExtra)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-
+    
     # Application title
-    titlePanel("Old Faithful Geyser Data"),
+    titlePanel("Global YouTube Statistics 2023"),
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
@@ -33,6 +33,9 @@ ui <- fluidPage(
     )
 )
 
+# "use if statements to check which x variable is selected and shows bar chart or
+# histogram or boxplot accordingly"
+
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
@@ -47,6 +50,7 @@ server <- function(input, output) {
              main = 'Histogram of waiting times')
     })
 }
+
 
 # Run the application 
 shinyApp(ui = ui, server = server)
