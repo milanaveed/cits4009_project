@@ -163,7 +163,7 @@ categoryf <- transform(categoryf,
 ggplot(categoryf) +
   geom_bar(aes(x = category, y = count), stat = "identity", fill = "gray") +
   coord_flip() +
-  ggtitle("Category of Channels") +
+  ggtitle("Number by Category") +
   color_theme
 ```
 We can see that Entertainment, Music, People & Blogs are the most popular categories among those leading channels we anaylse.
@@ -277,6 +277,8 @@ The popular channel from Latvia has a distinctively higher value of highest year
 
 
 # EDA: Geospatial information
+
+## Country distribution in space
 With longitude and latitude provided in the dataset, we are able to visualise the country distribution in the aspect of earnings analysis.
 ```{r}
 # Data preparation
@@ -299,6 +301,32 @@ mp3 <- mp2 + color_theme + theme(legend.position = "none")
 mp3
 ```
 Countries with high yearly earnings from the channels are mainly located in Europe, South Africa, the middle east and the South-East Asia.
+
+## Country with popular channels
+Plot the country information to gain insights of coutries with popular channels.
+```{r}
+# Sort the data
+dfsums <- table(df$Country.fix)
+
+# Convert the table object into a data frame
+countryf <- as.data.frame(dfsums)
+
+# Define the column names
+colnames(countryf) <- c("country", "count")
+
+# Sort the data frame
+countryf <- transform(countryf,
+                      country = reorder(country, count))
+
+# Plot the bar chart
+ggplot(countryf) +
+  geom_bar(aes(x = country, y = count), stat = "identity", fill = "gray") +
+  coord_flip() +
+  ggtitle("Number by Country") +
+  color_theme +
+  theme(axis.text.y = element_text(size = rel(0.55)))
+```
+
 
 # EDA: 
 
