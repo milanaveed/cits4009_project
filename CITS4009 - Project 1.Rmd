@@ -47,9 +47,9 @@ library(maps)
 ```{r}
 my_color <- "#2061F2"
 color_theme <- theme_few() + # Theme based on S. Few's "Practical Rules for Using Color in Charts"
-                  theme(plot.title = element_text(color = my_color)) +
-                  theme(strip.text.x = element_text(size = 14, colour = "#202020")) 
-                  #theme(plot.margin=margin(10,30,10,30))
+               theme(plot.title = element_text(color = my_color),
+                     plot.margin = margin(10, 20, 10, 20)) +
+               theme(strip.text.x = element_text(size = 14, colour = "#202020"))
 ```
 
 ## Extracting data
@@ -166,6 +166,7 @@ ggplot(categoryf) +
   ggtitle("Number by Category") +
   color_theme
 ```
+
 We can see that Entertainment, Music, People & Blogs are the most popular categories among those leading channels we anaylse.
  
 ## Relationship between the number of subscriber and category
@@ -177,10 +178,10 @@ We can see that Entertainment, Music, People & Blogs are the most popular catego
 Since "lowest_monthly_earnings" and "highest_monthly_earnings" are right-skewed variables, we will use two histograms to analyze each of the distribution: one with a log10 scale and one with a truncated linear scale.
 ```{r}
 p1 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
-  geom_histogram(aes(y=..density..), binwidth= 0.05, fill = "grey") +
+  geom_histogram(aes(y=..density..), binwidth= 0.10, fill = "grey") +
   geom_density(color= my_color)+
   scale_x_log10(breaks=c(100,2000,25000,200000))+
-  annotate("text", x = 100, y = 0.6, label = paste("The lowest monthly earning peaks"," at around 25000", sep="\n"))+
+  annotate("text", x = 100, y = 0.5, label = paste("The lowest monthly earning peaks"," at around 25000", sep="\n"))+
   ggtitle("Distribution of Lowest Monthly Earnings (Log-scale)") +
   color_theme
 
@@ -190,17 +191,17 @@ lme_IQR <- lme_Q3-lme_Q1
 lme_Q4 <- lme_Q3 + 1.5*lme_IQR
 
 p2 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
-  geom_histogram(aes(y=..density..), binwidth=2000, fill = "grey") +
+  geom_histogram(aes(y=..density..), binwidth=3000, fill = "grey") +
   geom_density(color=my_color)+
-  scale_x_continuous(breaks=c(200000,500000))+
-  xlim(0,6e+05)+
-  ylim(0, 0.00004) +
-  annotate("text", x = 200000, y = 2e-05, label = paste("Most of the distribution is concentrated", "at the low end: less than 200000", sep="\n"))+
+  scale_x_continuous(breaks=c(200000,500000), limits = c(0, 2.1e+05), oob = scales::oob_squish)+
+  scale_y_continuous(limits = c(0, 0.00004), oob = scales::oob_squish)+
+  annotate("text", x = 100000, y = 2e-05, label = paste("Most of the distribution is concentrated", "at the low end: less than 100000", sep="\n"))+
   ggtitle("Distribution of Lowest Monthly Earnings") +
   color_theme
 
 grid.arrange(p1, p2, ncol=1)
 ```
+
 Most of the distribution is concentrated at the low end and less than 200000. And the lowest monthly earning peaks at around 25000.
 
 ```{r}
@@ -245,6 +246,7 @@ ggplot(df, aes(x = reorder(category.fix, median_earnings_category), y = highest_
   ggtitle("Highest Yearly Earnings by Category (Ordered by Median)") +
   color_theme
 ```
+
 All categories have similar median values except Autos & Vehicles, whose median is significantly larger than others. Pets & Animals channel has the smallest median value of highest yearly earnings.
 
 
@@ -273,6 +275,7 @@ ggplot(top_20_country, aes(x = highest_yearly_earnings, y = reorder(Country.fix,
   ggtitle("Highest Yearly Earnings by Country (Ordered by Median)") +
   color_theme
 ```
+
 The popular channel from Latvia has a distinctively higher value of highest yearly earnings among all the countries.
 
 
@@ -300,6 +303,7 @@ mp2 <-
 mp3 <- mp2 + color_theme + theme(legend.position = "none")
 mp3
 ```
+
 Countries with high yearly earnings from the channels are mainly located in Europe, South Africa, the middle east and the South-East Asia.
 
 ## Country with popular channels
@@ -326,6 +330,7 @@ ggplot(countryf) +
   color_theme +
   theme(axis.text.y = element_text(size = rel(0.55)))
 ```
+
 Among those countries, the US, India, and Brazil have the most amount of leading YouTubers.
 
 
