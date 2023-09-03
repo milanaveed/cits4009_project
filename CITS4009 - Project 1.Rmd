@@ -171,7 +171,6 @@ We can see that Entertainment, Music, People & Blogs are the most popular catego
 ## Relationship between the number of subscriber and category
 
 
-
 # EDA: Earnings analysis
 
 ## Distribution of earnings
@@ -240,8 +239,9 @@ df$median_earnings_category <- with(df, ave(highest_yearly_earnings, category.fi
 
 # Create the boxplot
 ggplot(df, aes(x = reorder(category.fix, median_earnings_category), y = highest_yearly_earnings)) +
-  geom_boxplot() +
-  coord_flip() +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(alpha = 0.15, color = my_color) +
+  coord_flip(ylim = c(0, 6e+07)) +
   ggtitle("Highest Yearly Earnings by Category (Ordered by Median)") +
   color_theme
 ```
@@ -326,11 +326,7 @@ ggplot(countryf) +
   color_theme +
   theme(axis.text.y = element_text(size = rel(0.55)))
 ```
-
-
-# EDA: 
-
-
+Among those countries, the US, India, and Brazil have the most amount of leading YouTubers.
 
 
 # Code for Shiny App
