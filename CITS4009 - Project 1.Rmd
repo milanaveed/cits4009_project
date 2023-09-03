@@ -404,7 +404,7 @@ unique_countries <- unique(df_median_earnings_country_des$Country)
 selected_countries <- unique_countries[1:20]
 
 # Get all rows of the top 20 countries
-top_20_country <- df_median_earnings_country_des[df_median_earnings_country_des$Country %in% selected_countries, ]
+top_20_country <- subset(df_median_earnings_country_des, df_median_earnings_country_des$Country %in% selected_countries)
 
 # Create the boxplot
 ggplot(top_20_country, aes(x = highest_yearly_earnings, y = reorder(Country.fix, median_earnings_country))) +
