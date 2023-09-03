@@ -222,10 +222,10 @@ There seem to be some outliers between value 1,000,000 and 1,500,000.
 Next we analyze how earnings differ across different YouTube channel categories.
 ```{r}
 # Calculate median for each category
-df$median_earnings_category <- with(df, ave(highest_yearly_earnings, category, FUN=median))
+df$median_earnings_category <- with(df, ave(highest_yearly_earnings, category.fix, FUN=median))
 
 # Create the boxplot
-ggplot(df, aes(x = reorder(category, median_earnings_category), y = highest_yearly_earnings)) +
+ggplot(df, aes(x = reorder(category.fix, median_earnings_category), y = highest_yearly_earnings)) +
   geom_boxplot() +
   coord_flip() +
   ggtitle("Highest Yearly Earnings by Category (Ordered by Median)") +
