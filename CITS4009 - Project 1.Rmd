@@ -113,7 +113,7 @@ When conducting the earnings analysis and plotting the [Highest Yearly Earnings 
 df$Country.fix <- ifelse(is.na(df$Country),
                   "Missing", df$Country)
 df$category.fix <- ifelse(is.na(df$category),
-                  "Missing", df$category)
+                  "Uncategorised", df$category)
 ```
 
 ### Filtering data
@@ -181,21 +181,21 @@ p1 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
   geom_histogram(aes(y=..density..), binwidth= 0.10, fill = "grey") +
   geom_density(color= my_color)+
   scale_x_log10(breaks=c(100,2000,25000,200000))+
-  annotate("text", x = 100, y = 0.5, label = paste("The lowest monthly earning peaks"," at around 25000", sep="\n"))+
+  annotate("text", x = 100, y = 0.5, label = paste("The lowest monthly earnings peak"," at around 25000", sep="\n"))+
   ggtitle("Distribution of Lowest Monthly Earnings (Log-scale)") +
   color_theme
 
-lme_Q1 <- boxplot.stats(df$lowest_monthly_earnings)$stats[2]
-lme_Q3 <- boxplot.stats(df$lowest_monthly_earnings)$stats[4]
-lme_IQR <- lme_Q3-lme_Q1
-lme_Q4 <- lme_Q3 + 1.5*lme_IQR
+# lme_Q1 <- boxplot.stats(df$lowest_monthly_earnings)$stats[2]
+# lme_Q3 <- boxplot.stats(df$lowest_monthly_earnings)$stats[4]
+# lme_IQR <- lme_Q3-lme_Q1
+# lme_Q4 <- lme_Q3 + 1.5*lme_IQR
 
 p2 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
   geom_histogram(aes(y=..density..), binwidth=3000, fill = "grey") +
   geom_density(color=my_color)+
   scale_x_continuous(breaks=c(200000,500000), limits = c(0, 2.1e+05), oob = scales::oob_squish)+
-  scale_y_continuous(limits = c(0, 0.00004), oob = scales::oob_squish)+
-  annotate("text", x = 100000, y = 2e-05, label = paste("Most of the distribution is concentrated", "at the low end: less than 100000", sep="\n"))+
+  scale_y_continuous(limits = c(0, 0.00005), oob = scales::oob_squish)+
+  annotate("text", x = 100000, y = 3e-05, label = paste("Most of the distribution is concentrated", "at the low end: less than 100000", sep="\n"))+
   ggtitle("Distribution of Lowest Monthly Earnings") +
   color_theme
 
@@ -206,10 +206,10 @@ Most of the distribution is concentrated at the low end and less than 200000. An
 
 ```{r}
 p1 <- ggplot(df, aes(x = highest_monthly_earnings)) +
-  geom_histogram(aes(y=..density..), binwidth= 0.05, fill = "grey") +
+  geom_histogram(aes(y=..density..), binwidth= 0.1, fill = "grey") +
   geom_density(color=my_color)+
   scale_x_log10(breaks=c(100,2000,25000,400000))+
-  #annotate("text", x = 100, y = 0.7, label = paste("The lowest monthly earning peaks at around 25000"))+
+  annotate("text", x = 500, y = 0.4, label = paste("The highest monthly earnings peak", "at around 400000", sep="\n"))+
   ggtitle("Distribution of Highest Monthly Earnings (Log-scale)") +
   color_theme
 
@@ -219,18 +219,16 @@ hme_IQR <- hme_Q3-hme_Q1
 hme_Q4 <- hme_Q3 + 1.5*hme_IQR
 
 p2 <- ggplot(df, aes(x = highest_monthly_earnings)) +
-  geom_histogram(aes(y=..density..), binwidth=5000, fill = "grey") +
+  geom_histogram(aes(y=..density..), binwidth=25000, fill = "grey") +
   geom_density(color=my_color)+
-  xlim(0, hme_Q4) +
-  ylim(0, 0.000005) +
-  #annotate("text", x = 200000, y = 2e-05, label = paste("Most of the distribution is concentrated", "at the low end: less than 200000", sep="\n"))+
+  scale_x_continuous(breaks=c(25000,hme_Q3), limits = c(0, hme_Q4), oob = scales::oob_squish)+
   ggtitle("Distribution of Highest Monthly Earnings") +
   color_theme
 
 grid.arrange(p1, p2, ncol=1)
 ```
 
-There seem to be some outliers between value 1,000,000 and 1,500,000.
+There is a big contrast in the The highest monthly earnings vary greatly among leading YouTubers, with few people having very high earnings and most people have relatively low 
 
 ## Earnings by category {#earnings-by-category}
 Next we analyze how earnings differ across different YouTube channel categories.
@@ -271,7 +269,9 @@ top_20_country <- df_median_earnings_country_des[df_median_earnings_country_des$
 
 # Create the boxplot
 ggplot(top_20_country, aes(x = highest_yearly_earnings, y = reorder(Country.fix, median_earnings_country))) +
-  geom_boxplot() +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(alpha = 0.25, color = my_color) +
+  coord_cartesian(xlim = c(0, 7e+07)) +
   ggtitle("Highest Yearly Earnings by Country (Ordered by Median)") +
   color_theme
 ```
@@ -291,12 +291,12 @@ visit.y <- df$Latitude
 mp <- NULL #Create an empty map
 mapworld <- borders("world",colour = "gray50",fill="white") #Draw the map
 mp <- ggplot() + mapworld + ylim(-60, 90)
+# Draw the points
 mp2 <-
   mp + geom_point(aes(
     x = visit.x,
     y = visit.y,
-    size = df$highest_yearly_earnings
-  ),
+    size = df$highest_yearly_earnings),
   color = my_color) +
   scale_size(range = c(2, 9)) +
   ggtitle("Geospatial Information About Highest Yearly Earnings")
@@ -324,7 +324,7 @@ countryf <- transform(countryf,
 
 # Plot the bar chart
 ggplot(countryf) +
-  geom_bar(aes(x = country, y = count), stat = "identity", fill = "gray") +
+  geom_bar(aes(x = country, y = count), stat = "identity", fill = "darkgray") +
   coord_flip() +
   ggtitle("Number by Country") +
   color_theme +
