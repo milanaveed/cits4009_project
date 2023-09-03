@@ -2,13 +2,12 @@
 title: "CITS4009 - Project 1"
 author: "Mila Zhang (22756463)"
 output: 
-  html_notebook: 
-    toc: yes
   html_document:
     toc: true
     toc_depth: 3
     toc_float: true
-runtime: shiny
+  html_notebook: 
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -49,7 +48,8 @@ library(maps)
 color_theme <- theme_few() + # Theme based on S. Few's "Practical Rules for Using Color in Charts"
                   theme(plot.title = element_text(color = "darkred")) +
                   theme(strip.text.x = element_text(size = 14, colour = "#202020")) +
-                  theme(plot.margin=margin(10,30,10,30))
+                  theme(plot.margin=margin(10,30,10,30),panel.background = element_rect(fill = "white"))
+                  
 ```
 
 ## Extracting data
@@ -144,6 +144,7 @@ p2 <- ggplot(df, aes(x = highest_monthly_earnings)) +
 
 grid.arrange(p1, p2, ncol=1)
 ```
+
 There seem to be some outliers between value 1,000,000 and 1,500,000.
 
 ## Earnings by category
@@ -199,7 +200,7 @@ mp2<-mp+geom_point(aes(x=visit.x,y=visit.y,size=df$highest_yearly_earnings),colo
   ggtitle("Geospatial Information About Highest Yearly Earnings")+
   theme(plot.title=element_text(size=25,color="red",face="italic"))+
   theme_grey(base_size = 32)  
-mp3<-mp2+theme(legend.position = "none")
+mp3<-mp2+color_theme+theme(legend.position = "none")
 mp3
 ```
 
