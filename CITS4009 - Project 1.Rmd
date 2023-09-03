@@ -158,7 +158,6 @@ colnames(categoryf) <- c("category", "count")
 # Sort the data frame
 categoryf <- transform(categoryf,
                        category = reorder(category, count))
-
 # Plot the bar chart
 ggplot(categoryf) +
   geom_bar(aes(x = category, y = count), stat = "identity", fill = "gray") +
@@ -170,6 +169,9 @@ ggplot(categoryf) +
 We can see that Entertainment, Music, People & Blogs are the most popular categories among those leading channels we anaylse.
  
 ## Relationship between the number of subscriber and category
+
+
+
 
 
 # EDA: Earnings analysis
@@ -193,7 +195,7 @@ p1 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
 p2 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
   geom_histogram(aes(y=..density..), binwidth=3000, fill = "grey") +
   geom_density(color=my_color)+
-  scale_x_continuous(breaks=c(200000,500000), limits = c(0, 2.1e+05), oob = scales::oob_squish)+
+  scale_x_continuous(breaks=c(100000), limits = c(0, 2.1e+05), oob = scales::oob_squish)+
   scale_y_continuous(limits = c(0, 0.00005), oob = scales::oob_squish)+
   annotate("text", x = 100000, y = 3e-05, label = paste("Most of the distribution is concentrated", "at the low end: less than 100000", sep="\n"))+
   ggtitle("Distribution of Lowest Monthly Earnings") +
