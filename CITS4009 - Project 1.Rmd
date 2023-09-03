@@ -189,15 +189,26 @@ countryf <- as.data.frame(dfsums)
 colnames(countryf) <- c("country", "count")
 
 # Sort the data frame
-countryf <- transform(countryf,
+countryf <- countryf %>% arrange(desc(countryf$count))
+
+# Get unique country names
+unique_countries <- unique(countryf$country)
+
+# Select the first 10 unique country names
+selected_countries <- unique_countries[1:25]
+
+# Get all rows of the top 10 countries with the largest amount of famous channels
+top_25_country <- subset(countryf, countryf$country %in% selected_countries)
+
+top_25_country <- transform(top_25_country,
                       country = reorder(country, count))
+
 # Plot the bar chart
-ggplot(countryf) +
+ggplot(top_25_country) +
     geom_bar(aes(x = country, y = count), stat = "identity", fill = my_color, alpha = 0.40) +
     coord_flip() +
-    ggtitle("Number by Country") +
-    color_theme +
-    theme(axis.text.y = element_text(size = rel(0.55)))
+    ggtitle("Number by Country (Top 25)") +
+    color_theme
 ```
 
 Among those countries, the US, India, and Brazil have the most amount of leading YouTubers.
@@ -209,14 +220,36 @@ Explore the relationship between categories and countries.
 # Filter the dataset using the isBad indicator
 df1 <- subset(df, df$Country_isBad == FALSE)
 
-df1 %>% 
-  group_by(Country, category.fix) %>% 
-  summarise(count = n())
+# Create a subset containing only two columns for later plotting
+df1 <- subset(df1, select = c("Country", "category.fix"))
 
-ggplot(df1, aes(x = category.fix, y = Country)) +
-  geom_count(aes(size = df1$count, group = category.fix)) +
-  scale_size_area(max_size=10)
+# Sort the data frame
+df1 <- df1 %>% arrange(desc(df_grouped$count))
 
+
+# Group country and category, then count the occurrences of each combination
+df_grouped <- df1 %>% 
+              group_by(Country, category.fix) %>% 
+              summarise(count = n())
+
+
+df_grouped
+
+# Get unique country names
+#unique_countries <- unique($Country)
+
+# # Select the first 10 unique country names
+# selected_countries <- unique_countries[1:10]
+#
+# # Get all rows of the top 10 countries with the largest amount of famous channels
+# top_10_country <- subset(df_median_earnings_country_des, df_median_earnings_country_des$Country %in% selected_countries)
+
+
+
+ggplot(df_grouped, aes(x = category.fix, y = Country)) +
+  geom_count(aes(size = df_grouped$count, group = category.fix)) +
+  scale_size_area(max_size=10) +
+  color_theme
 ```
 
 # Content strategy analysis
