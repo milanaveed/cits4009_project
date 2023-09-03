@@ -32,6 +32,10 @@ library(timeDate)
 library(lubridate)
 library(reshape2)
 library(ca)
+library(ggmap)
+library(sp)
+library(maptools)
+library(maps)
 ```
 
 ## Setting up a plotting theme
@@ -70,7 +74,7 @@ Missing/invalid/sentinel/outlier data treatment, discretization, normalisation, 
 ## Loading data
 Save the cleaned and transformed data
 ```{r}
-write.csv(df_filtered, "./data/youtube_data_cleaned")
+#write.csv(df_filtered, "./data/youtube_data_cleaned")
 ```
 
 # EDA: Content strategy analysis
@@ -78,7 +82,7 @@ write.csv(df_filtered, "./data/youtube_data_cleaned")
 
 # EDA: Earnings analysis
 
-## Distribution of Earnings
+## Distribution of earnings
 Since "lowest_monthly_earnings" and "highest_monthly_earnings" are right-skewed variables, we will use two histograms to analyze each of the distribution: one with a log10 scale and one with a truncated linear scale.
 ```{r}
 p1 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
@@ -151,22 +155,13 @@ ggplot(df, aes(x = reorder(category, median_earnings_category), y = highest_year
 ```
 All categories have similar median values except Autos & Vehicles, whose median is significantly larger than others. Pets & Animals channel has the smallest median value of highest yearly earnings.
 
-****
 TODO: take out the value "nan" missing values
 checking for NaN values in "a" vector:
 any(is.nan(a))
-****
+
 
 ## Earnings by country
-```{r}
-ggplot(df, aes(x = Country, y = highest_yearly_earnings)) +
-  geom_boxplot() +
-  coord_flip() +
-  ggtitle("Highest Yearly Earnings by Country")+
-  color_theme
-```
-TODO: 由大到小排序，只展示20行
-
+We can analyse the highest yearly earnings of the top 995 YouTube channels by country.
 ```{r}
 # Calculate median for each country and filter the top 20
 top_countries <- df %>%
@@ -176,7 +171,7 @@ top_countries <- df %>%
   head(20) %>%
   pull(Country)
 
-# Filter the original dataframe to only include these top 20 countries
+# Filter the original data frame to only include these top 20 countries
 df_filtered <- df %>% filter(Country %in% top_countries)
 
 # Create the boxplot
@@ -186,12 +181,25 @@ ggplot(df_filtered, aes(x = reorder(Country, median_earnings_country), y = highe
   ggtitle("Highest Yearly Earnings by Country (Top 20 by Median)") +
   color_theme
 ```
-
+The popular channel from Latvia has a distinctively higher value of highest yearly earnings among all the countries.
 
 ## Geographical plotting
 
 
 # EDA: Geospatial information
+
+```{r}
+visit.x<-df$Longitude
+visit.y<-df$Latitude  #数据准备
+ #导入需要的按照包，如果没有相关的包可通过install.packages("xxx")获得
+mp<-NULL #定义一个空的地图
+mapworld<-borders("world",colour = "gray50",fill="white") #绘制基本地图
+mp<-ggplot()+mapworld+ylim(-60,90) #利用ggplot呈现，同时地图纵坐标范围从-60到90
+mp2<-mp+geom_point(aes(x=visit.x,y=visit.y,size=df$highest_yearly_earnings),color="darkorange")+scale_size(range=c(2,9))+ggtitle("plot name")+theme(plot.title=element_text(size=25,color="red",face="italic"))+theme_grey(base_size = 32)  
+#绘制带点的地图，geom_point是在地图上绘制点，x轴为经度信息，y轴为纬度信息，size是将点的大小按照收集的个数确定，color为暗桔色，scale_size是将点变大一些,ggtitle是添加标题，theme是改变标题大小、颜色和字体类型,theme_grey调节坐标轴字体大小
+mp3<-mp2+theme(legend.position = "none") #将图例去掉
+mp3 #将地图呈现出来
+```
 
 
 # EDA: Trend by time
