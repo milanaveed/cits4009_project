@@ -163,22 +163,14 @@ any(is.nan(a))
 ## Earnings by country
 We can analyse the highest yearly earnings of the top 995 YouTube channels by country.
 ```{r}
-# Calculate median for each country and filter the top 20
-top_countries <- df %>%
-  group_by(Country) %>%
-  summarise(median_earnings_country = median(highest_yearly_earnings, na.rm = TRUE)) %>%
-  arrange(-median_earnings_country) %>%
-  head(20) %>%
-  pull(Country)
-
-# Filter the original data frame to only include these top 20 countries
-df_filtered <- df %>% filter(Country %in% top_countries)
+# Calculate median for each country
+df$median_earnings_country <- with(df, ave(highest_yearly_earnings, Country, FUN=median))
 
 # Create the boxplot
-ggplot(df_filtered, aes(x = reorder(Country, median_earnings_country), y = highest_yearly_earnings)) +
+ggplot(df, aes(x = reorder(Country, median_earnings_country), y = highest_yearly_earnings)) +
   geom_boxplot() +
   coord_flip() +
-  ggtitle("Highest Yearly Earnings by Country (Top 20 by Median)") +
+  ggtitle("Highest Yearly Earnings by Country (Ordered by Median)") +
   color_theme
 ```
 The popular channel from Latvia has a distinctively higher value of highest yearly earnings among all the countries.
@@ -189,14 +181,16 @@ The popular channel from Latvia has a distinctively higher value of highest year
 # EDA: Geospatial information
 
 ```{r}
+#数据准备
 visit.x<-df$Longitude
-visit.y<-df$Latitude  #数据准备
- #导入需要的按照包，如果没有相关的包可通过install.packages("xxx")获得
+visit.y<-df$Latitude  
+
 mp<-NULL #定义一个空的地图
 mapworld<-borders("world",colour = "gray50",fill="white") #绘制基本地图
 mp<-ggplot()+mapworld+ylim(-60,90) #利用ggplot呈现，同时地图纵坐标范围从-60到90
-mp2<-mp+geom_point(aes(x=visit.x,y=visit.y,size=df$highest_yearly_earnings),color="darkorange")+scale_size(range=c(2,9))+ggtitle("plot name")+theme(plot.title=element_text(size=25,color="red",face="italic"))+theme_grey(base_size = 32)  
-#绘制带点的地图，geom_point是在地图上绘制点，x轴为经度信息，y轴为纬度信息，size是将点的大小按照收集的个数确定，color为暗桔色，scale_size是将点变大一些,ggtitle是添加标题，theme是改变标题大小、颜色和字体类型,theme_grey调节坐标轴字体大小
+mp2<-mp+geom_point(aes(x=visit.x,y=visit.y,size=df$highest_yearly_earnings),color="darkorange")+
+  scale_size(range=c(2,9))+
+  ggtitle("plot name")+theme(plot.title=element_text(size=25,color="red",face="italic"))+theme_grey(base_size = 32)  
 mp3<-mp2+theme(legend.position = "none") #将图例去掉
 mp3 #将地图呈现出来
 ```
