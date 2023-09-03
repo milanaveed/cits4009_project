@@ -48,8 +48,8 @@ library(maps)
 my_color <- "#2061F2"
 color_theme <- theme_few() + # Theme based on S. Few's "Practical Rules for Using Color in Charts"
                   theme(plot.title = element_text(color = my_color)) +
-                  theme(strip.text.x = element_text(size = 14, colour = "#202020")) +
-                  theme(plot.margin=margin(10,30,10,30))
+                  theme(strip.text.x = element_text(size = 14, colour = "#202020")) 
+                  #theme(plot.margin=margin(10,30,10,30))
 ```
 
 ## Extracting data
@@ -63,34 +63,53 @@ df <- read.csv(data.path)
 ```{r message=FALSE, warning=FALSE}
 head(df)
 ```
+From the first 6 rows of the data, we can discover some missing values or invalid values which we will convert later according to the need of plotting.
 
 ### Using summary() to analyze the data
 ```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 summary(df)
 ```
 
-### Using str() to analyze the data??
+********
 
 ## Transforming data
-Missing/invalid/sentinel/outlier data treatment, discretization, normalisation, log-scales and etc.
+Below are data treatments for missing/invalid/sentinel/outlier values, discretization, normalisation, log-scales and etc.
+
 ### Cleaning data
+
+#### Cleaning column created_year
 YouTube was created in 2005, so any channel on YouTube should be created in or after 2005. If the created year of a channel is earlier than 2005, then this variable contains invalid value. Also, valid values in the column `created_year` are supposed to be numbers, any NaN value should be turned into NA.
 ```{r}
-df_cleaned <- mutate(df,
-                     created_year = ifelse(created_year < 2005, NA, created_year))
+df <- mutate(df,
+             created_year = ifelse(created_year < 2005, NA, created_year))
 ```
 
 We can check our data cleaning by counting the occurrences of each value in the column.
 ```{r}
-df_cleaned %>%
-  count(created_year)
+df %>% count(created_year)
 ```
 Now we have converted those invalid values into NA.
 
+#### Cleaning column Country
+When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Country](#earnings-by-country), some values of `nan` were involved initially. We first turn them into NA values.
+```{r}
+df <- mutate(df,
+             Country = ifelse(Country=="nan", NA, Country))
+df %>% count(Country)
+```
+After inspecting the occurrences of each value in the column Country, we found that there are 122 NA values. 
 
+#### Cleaning column category
+When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Category](#earnings-by-category), some values of `nan` were involved initially. We first turn them into NA values.
 
 
 ### Filtering data
+TODO:
+- take out the NA values in Country
+```{r}
+#template:
+#count_value_2 <- filter(data_counted, column1 == 2)$n
+```
 
 ## Loading data
 Save the cleaned and transformed data
@@ -163,7 +182,7 @@ grid.arrange(p1, p2, ncol=1)
 
 There seem to be some outliers between value 1,000,000 and 1,500,000.
 
-## Earnings by category
+## Earnings by category {#earnings-by-category}
 Next we analyze how earnings differ across different YouTube channel categories.
 ```{r}
 # Calculate median for each category
@@ -178,12 +197,8 @@ ggplot(df, aes(x = reorder(category, median_earnings_category), y = highest_year
 ```
 All categories have similar median values except Autos & Vehicles, whose median is significantly larger than others. Pets & Animals channel has the smallest median value of highest yearly earnings.
 
-TODO: take out the value "nan" missing values
-checking for NaN values in "a" vector:
-any(is.nan(a))
 
-
-## Earnings by country
+## Earnings by country {#earnings-by-country}
 We can analyse the highest yearly earnings of the top 995 YouTube channels by country.
 ```{r warning=FALSE}
 # Calculate median for each country
@@ -208,7 +223,7 @@ visit.y<-df$Latitude
 mp<-NULL #Create an empty map
 mapworld<-borders("world",colour = "gray50",fill="white") #Draw the map
 mp<-ggplot()+mapworld+ylim(-60,90) 
-mp2<-mp+geom_point(aes(x=visit.x,y=visit.y,size=df$highest_yearly_earnings),color="darkred")+
+mp2<-mp+geom_point(aes(x=visit.x,y=visit.y,size=df$highest_yearly_earnings),color=my_color)+
   scale_size(range=c(2,9))+
   ggtitle("Geospatial Information About Highest Yearly Earnings")+
   theme(plot.title=element_text(size=25,color="red",face="italic"))+
