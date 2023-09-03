@@ -60,7 +60,7 @@ df <- read.csv(data.path)
 
 ## Data Overview
 ### Using head() to analyze the data
-```{r}
+```{r message=FALSE, warning=FALSE}
 head(df)
 ```
 
@@ -74,6 +74,12 @@ summary(df)
 ## Transforming data
 Missing/invalid/sentinel/outlier data treatment, discretization, normalisation, log-scales and etc.
 ### Cleaning data
+YouTube was created in 2005, so any channel on YouTube should be created in or after 2005. If the created year of a channel is earlier than 2005, then this variable contains invalid value.
+```{r}
+df_cleaned <- mutate(df,
+                     created_year = ifelse(created_year < 2005, NA, created_year))
+```
+
 
 ### Filtering data
 
