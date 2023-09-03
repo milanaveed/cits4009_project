@@ -110,7 +110,6 @@ p2 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
   geom_histogram(aes(y=..density..), binwidth=2000, fill = "grey") +
   geom_density(color=my_color)+
   scale_x_continuous(breaks=c(200000,500000))+
-  #xlim(0, lme_Q4) +
   xlim(0,6e+05)+
   ylim(0, 0.00004) +
   annotate("text", x = 200000, y = 2e-05, label = paste("Most of the distribution is concentrated", "at the low end: less than 200000", sep="\n"))+
