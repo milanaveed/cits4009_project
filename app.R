@@ -117,7 +117,7 @@ server <- function(input, output, session) {
     # Determine the plot type
     plot_type <- determine_type()
     
-    updateSelectInput(session, "y_var", determine_y(input$x_var))
+    updateSelectInput(session, "y_var", choices=determine_y(input$x_var))
     
     if (plot_type=="Distribution of Lowest Monthly Earnings(Log-scale)") {
       updateSliderInput(
