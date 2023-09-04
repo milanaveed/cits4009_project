@@ -53,7 +53,6 @@ df <- subset(df, !is.na(df$created_year) & !is.na(df$video.views))
 # Define x variable lists
 x_variables <-
   c(
-    "None",
     "Country",
     "Created year",
     "Category",
@@ -67,7 +66,6 @@ x_variables <-
 # Define a function to get the available y options
 determine_y <- function(x){
   switch(x,
-         "None" = c("None"),
          "Country" = c("Category (number of channels)",
                        "Category (number of subscribers)"),
          "Created year" = c("Category (number of channels)"),
@@ -81,21 +79,21 @@ determine_y <- function(x){
 }
 
 # Create a list of names of available plots
-plots <- c(
-  "Number of Channels by Country",
-  "Category VS Country (Channels)",
-  "Category VS Created Year (Channels)",
-  "Category VS Country (Subscribers)",
-  "Number of Channels by Category",
-  "Number of Uploads VS Subscribers",
-  "Number of Uploads VS Video Views",
-  "Distribution of Lowest Monthly Earnings(Log-scale)",
-  "Distribution of Highest Monthly Earnings(Log-scale)",
-  "Highest Yearly Earnings by Category (by Median)",
-  "Highest Yearly Earnings by Country (Top 20 by Median)",
-  "Highest Yearly Earnings in Space",
-  "None"
-)
+# plots <- c(
+#   "Number of Channels by Country",
+#   "Category VS Country (Channels)",
+#   "Category VS Created Year (Channels)",
+#   "Category VS Country (Subscribers)",
+#   "Number of Channels by Category",
+#   "Number of Uploads VS Subscribers",
+#   "Number of Uploads VS Video Views",
+#   "Distribution of Lowest Monthly Earnings(Log-scale)",
+#   "Distribution of Highest Monthly Earnings(Log-scale)",
+#   "Highest Yearly Earnings by Category (by Median)",
+#   "Highest Yearly Earnings by Country (Top 20 by Median)",
+#   "Highest Yearly Earnings in Space",
+#   "None"
+# )
 
 
 # User Interface
@@ -104,13 +102,13 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       selectInput("x_var", "Choose x variable:", x_variables),
-      selectInput("y_var", "Choose y variable:", "None"),
-      # conditionalPanel(
-      #   condition = "input.x_var == 'Lowest monthly earnings' && input.y_var == 'Density'",
-      #   sliderInput("binwidth", "Binwidth:", min = 0.1, max = 0.8, value =0.1),
-      #   sliderInput("x_limit", "X-Axis Limit:", min = 0, max = 800000, value = 500000),
-      #   sliderInput("y_limit", "Y-Axis Limit:", min = 0, max = 1, value = 0.8)
-      # )
+      selectInput("y_var", "Choose y variable:", "Category (number of channels)"),
+      conditionalPanel(
+        condition = "input.x_var == 'Lowest monthly earnings' && input.y_var == 'Density'",
+        sliderInput("binwidth", "Binwidth:", min = 0.1, max = 0.8, value =0.1, step=0.1),
+        sliderInput("x_limit", "X-axis limit:", min = 0, max = 800000, value = 500000, step=100000),
+        sliderInput("y_limit", "Y-axis limit:", min = 0, max = 1, value = 0.8, step=0.1)
+      )
     ),
     mainPanel(
       plotOutput("plot")
@@ -243,23 +241,25 @@ server <- function(input, output, session) {
     grid.arrange(p1, p2, ncol=1)
   }
   
-  g7 <- function(df){
+  g7 <- function(df, bin, x_limit, y_limit){
     ggplot(df, aes(x = lowest_monthly_earnings)) +
-      geom_histogram(aes(y=..density..), binwidth= 0.1, fill = "grey") +
+      geom_histogram(aes(y=after_stat(density)), binwidth= bin, fill = "grey") +
       geom_density(color= my_color)+
       scale_x_log10(breaks=c(100,2000,25000,200000))+
-      annotate("text", x = 100, y = 0.5, label = paste("The lowest monthly earnings peak"," at around 25000", sep="\n"))+
+      coord_cartesian(xlim = c(1,x_limit), ylim = c(0,y_limit)) +
+      annotate("text", x = 500, y = 0.5, label = paste("The lowest monthly earnings peak"," at around 25000", sep="\n"))+
       ggtitle("Distribution of Lowest Monthly Earnings (Log-scale)") +
       color_theme
   }
   
-  g8 <- function(df) {
+  g8 <- function(df, bin, x_limit, y_limit) {
     ggplot(df, aes(x = highest_monthly_earnings)) +
       geom_histogram(aes(y = ..density..),
-                     binwidth = 0.1,
+                     binwidth = bin,
                      fill = "grey") +
       geom_density(color = my_color) +
       scale_x_log10(breaks = c(100, 2000, 25000, 400000)) +
+      coord_cartesian(xlim = c(1,x_limit), ylim = c(0,y_limit)) +
       annotate(
         "text",
         x = 500,
@@ -344,9 +344,9 @@ server <- function(input, output, session) {
     }else if(input$x_var == "Number of uploads" && input$y_var == "Number of video views"){
       g6(df)
     }else if(input$x_var ==  "Lowest monthly earnings" && input$y_var == "Density"){
-      g7(df)
+      g7(df, input$binwidth, input$x_limit, input$y_limit)
     }else if(input$x_var ==  "Highest monthly earnings" && input$y_var == "Density"){
-      g8(df)
+      g8(df, input$binwidth, input$x_limit, input$y_limit)
     }else if(input$x_var ==  "Highest yearly earnings" && input$y_var == "Category"){
       g9(df)
     }else if(input$x_var ==  "Highest yearly earnings"&& input$y_var == "Country"){
