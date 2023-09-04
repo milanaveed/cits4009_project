@@ -98,7 +98,7 @@ Now we have converted those invalid values into NA.
 
 #### Cleaning column category
 When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Category](#earnings-by-category), some values of `nan` were involved initially. We first turn them into NA values.
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 df <- mutate(df,
              category = ifelse(category=="nan", NA, category))
 df %>% count(category)
@@ -107,7 +107,7 @@ After inspecting the occurrences of each value in the column category, we found 
 
 #### Cleaning column Country
 When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Country](#earnings-by-country), some values of `nan` were involved initially. We first turn them into NA values.
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 df <- mutate(df,
              Country = ifelse(Country=="nan", NA, Country))
 df %>% count(Country)
@@ -123,10 +123,10 @@ df <- mutate(df,
 
 #### Dealing with invalid values in column video.views
 According to common sense and through observation of the dataset, some values in the `video.views` are distinctively smaller than others. We turn those abnormal values into NAs.
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 df <- mutate(df,
              video.views = ifelse(video.views<1000000, NA, video.views))
-#df %>% count(df$video.views)
+df %>% count(df$video.views)
 ```
 
 
@@ -151,18 +151,12 @@ df$video.views_isBad <- is.na(df$video.views)
 ```
 
 #### Removing rows of NA in column created_year and video.views
-****
+When plotting [Category VS Created Year (Channels)]({#category-vs-created-year}) and [Number of Uploads VS Video Views]({#number-of-uploads-vs-video-views})
 We calculte the occurrences of NA in created_year and there are only 6 invalid values, and thus has small impact on the whole dataset. We can remove it safely.
 ```{r}
 df <- subset(df, !is.na(df$created_year) & !is.na(df$video.views))
 ```
 
-
-****
-```{r}
-#template:
-#count_value_2 <- filter(data_counted, column1 == 2)$n
-```
 
 # General analysis
 
@@ -228,13 +222,13 @@ df_grouped <- top_15_country %>%
 ggplot(df_grouped, aes(x = Abbreviation, y = category.fix)) +
   geom_count(aes(size = df_grouped$count, group = category.fix), color=my_color, alpha=0.7) +
   scale_size_area(max_size=10, name="Channels") +
-  ggtitle("Category VS Country") +
+  ggtitle("Category VS Country (Number of Channels)") +
   color_theme
 ```
 
 India and the US have similar trend of popular categories. Both of the two countries have more leading channels in People&Blogs, Music and Entertainment. Other countries do not have obvious channel preferences.
 
-## Relationship of the number of channels between category and created year
+## Relationship of the number of channels between category and created year {#category-vs-created-year}
 Explore the relationship between categories and countries.
 ```{r}
 # Filter the dataset using the isBad indicator
@@ -248,7 +242,7 @@ df_grouped1 <- df1 %>%
 ggplot(df_grouped1, aes(x = created_year, y = category.fix)) +
   geom_count(aes(size = df_grouped1$count, group = category.fix), color=my_color, alpha=0.7) +
   scale_size_area(max_size=10, name="Channels") +
-  ggtitle("Category VS Created Year") +
+  ggtitle("Category VS Created Year (Number of Channels)") +
   color_theme
 ```
 
@@ -265,7 +259,7 @@ df_grouped2 <- top_15_country %>%
 ggplot(df_grouped2, aes(x = Abbreviation, y = category.fix)) +
   geom_count(aes(size = df_grouped2$count, group = category.fix), color=my_color, alpha=0.7) +
   scale_size_area(max_size=10, name="Subscribers") +
-  ggtitle("Category VS Country") +
+  ggtitle("Category VS Country (Number of Subscribers)") +
   color_theme
 ```
 
@@ -338,7 +332,7 @@ ggplot(df1, aes(x = uploads, y = subscribers)) +
 
 No apparent liner correlation between number of uploads and subscribers for those YouTube giants.
 
-## Relationship between the number of uploads and video.views
+## Relationship between the number of uploads and video.views {#number-of-uploads-vs-video-views}
 To reveal the relationship between two variables uploads and video.views, a point geom and a smooth geom will present the density, distribution and trend in a simplified and direct way.
 ```{r}
 # Filter the dataset using the isBad indicators
@@ -347,7 +341,7 @@ df1 <- subset(df, df$uploads_isBad == FALSE & df$video.views_isBad == FALSE)
 p1 <- ggplot(df1, aes(x = uploads, y = video.views)) +
       geom_point(color = my_color, alpha = 0.3) + 
       labs(x = "") + # Hide x coordinate label
-      ggtitle("Number of Uploads VS Subscribers") +
+      ggtitle("Number of Uploads VS Video Views") +
       color_theme
 
 p2 <- ggplot(df1, aes(x = uploads, y = video.views)) +
@@ -375,7 +369,7 @@ No apparent liner correlation between number of uploads and video views for thos
 Since "lowest_monthly_earnings" and "highest_monthly_earnings" are right-skewed variables, we will use two histograms to analyze each of the distribution: one with a log10 scale and one with a truncated linear scale.
 ```{r}
 p1 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
-  geom_histogram(aes(y=..density..), binwidth= 0.10, fill = "grey") +
+  geom_histogram(aes(y=..density..), binwidth= 0.1, fill = "grey") +
   geom_density(color= my_color)+
   scale_x_log10(breaks=c(100,2000,25000,200000))+
   annotate("text", x = 100, y = 0.5, label = paste("The lowest monthly earnings peak"," at around 25000", sep="\n"))+
@@ -433,7 +427,7 @@ ggplot(df, aes(x = reorder(category.fix, median_earnings_category), y = highest_
   geom_boxplot(outlier.shape = NA) +
   geom_jitter(alpha = 0.2, color = my_color) +
   coord_flip(ylim = c(0, 6e+07)) +
-  ggtitle("Highest Yearly Earnings by Category (Ordered by Median)") +
+  ggtitle("Highest Yearly Earnings by Category (by Median)") +
   color_theme
 ```
 
@@ -487,13 +481,13 @@ mp2 <-
     y = visit.y,
     size = df$highest_yearly_earnings),
     color = my_color) +
-    scale_size(range = c(2, 9)) +
+    scale_size(range = c(2, 10)) +
     ggtitle("Geospatial Information About Highest Yearly Earnings")
 mp3 <- mp2 + color_theme + theme(legend.position = "none")
 mp3
 ```
 
-Countries with high yearly earnings from the channels are mainly located in Europe, South Africa, the middle east and the South-East Asia.
+Channels with high yearly earnings are mainly located in Europe, South Africa, the middle east and the South-East Asia.
 
 
 

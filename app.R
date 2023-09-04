@@ -1,9 +1,54 @@
 # Load required packages
 library(shiny)
 library(ggplot2)
+library(gridExtra)
+library(GGally)
+library(dplyr)
+library(ggthemes)
+library(lubridate)
+library(ca)
+library(ggmap)
+library(sp)
+library(maptools)
+library(maps)
 
-# Load your data from the current directory and store it in 'df'
+# Load data from the current directory
 df <- read.csv("./youtube_UTF_8.csv")
+
+# Define color theme
+my_color <- "#2061F2"
+color_theme <- theme_few() + # Theme based on S. Few's "Practical Rules for Using Color in Charts"
+  theme(plot.title = element_text(color = my_color),
+        plot.margin = margin(10, 20, 10, 20)) +
+  theme(strip.text.x = element_text(size = 14, colour = "#202020"))
+
+#------------------------ Data cleaning starts----------------------------
+# Dealing with missing values and invalid values
+df <- mutate(df,
+             created_year = ifelse(created_year < 2005, NA, created_year))
+df <- mutate(df,
+             category = ifelse(category=="nan", NA, category))
+df <- mutate(df,
+             Country = ifelse(Country=="nan", NA, Country))
+df <- mutate(df,
+             uploads = ifelse(uploads==0, NA, uploads))
+df <- mutate(df,
+             video.views = ifelse(video.views<1000000, NA, video.views))
+df$Country.fix <- ifelse(is.na(df$Country),
+                         "Missing", df$Country)
+df$category.fix <- ifelse(is.na(df$category),
+                          "Uncategorised", df$category)
+
+# Add isBad indicators to columns Country, category and uploads
+df$Country_isBad <- is.na(df$Country)
+df$category_isBad <- is.na(df$category)
+df$uploads_isBad <- is.na(df$uploads)
+df$video.views_isBad <- is.na(df$video.views)
+
+# Removing rows of NA in column created_year and video.views
+df <- subset(df, !is.na(df$created_year) & !is.na(df$video.views))
+
+#------------------------ Data cleaning ends----------------------------
 
 # Define x variable lists
 x_variables <-
@@ -27,10 +72,10 @@ determine_y <- function(x){
          "Created year" = c("Category (number of channels)",
                             "Category (number of subscribers)"),
          "Category" = c("Number"),
-         "Number of uploads"=c("Number of subscribers","Number of Video Views"),
-         "Lowest monthly Earnings" = c("Density"),
-         "Highest monthly Earnings" = c("Density"),
-         "Highest yearly Earnings" = c("Category","Country"),
+         "Number of uploads"=c("Number of subscribers","Number of video views"),
+         "Lowest monthly earnings" = c("Density"),
+         "Highest monthly earnings" = c("Density"),
+         "Highest yearly earnings" = c("Category","Country"),
          "Longitude" = c("Latitude")
   )
 }
@@ -53,46 +98,45 @@ plots <- c(
 )
 
 # Define a function to check the plot type
-determine_type <- function() {
-  if (input$x_var == "Country" && input$y_var == "Number") {
+determine_type <- function(x, y) {
+  if (x == "Country" && y == "Number") {
     return(plots[1])
-  } else if (input$x_var == "Country" &&
-             input$y_var == "Category (number of channels)") {
+  } else if (x == "Country" &&
+             y == "Category (number of channels)") {
     return(plots[2])
-  } else if (input$x_var == "Created Year" &&
-             input$y_var == "Category (number of channels)") {
+  } else if (x == "Created year" &&
+             y == "Category (number of channels)") {
     return(plots[3])
-  } else if (input$x_var == "Created Year" &&
-             input$y_var == "Category (number of subscribers)") {
+  } else if (x == "Created year" &&
+             y == "Category (number of subscribers)") {
     return(plots[4])
-  } else if (input$x_var == "Category" &&
-             input$y_var == "Number") {
+  } else if (x == "Category" &&
+             y == "Number") {
     return(plots[5])
-  } else if (input$x_var == "Number of uploads" &&
-             input$y_var == "Number of subscribers") {
+  } else if (x == "Number of uploads" &&
+             y == "Number of subscribers") {
     return(plots[6])
-  } else if (input$x_var == "Number of uploads" &&
-             input$y_var == "Number of Video Views") {
+  } else if (x == "Number of uploads" &&
+             y == "Number of video views") {
     return(plots[7])
-  } else if (input$x_var == 'Lowest monthly Earnings' &&
-             input$y_var == 'Density') {
+  } else if (x == 'Lowest monthly earnings' &&
+             y == 'Density') {
     return(plots[8])
-  } else if (input$x_var == 'Highest monthly Earnings' &&
-             input$y_var == 'Density') {
+  } else if (x == 'Highest monthly earnings' &&
+             y == 'Density') {
     return(plots[9])
-  } else if (input$x_var == 'Highest yearly Earnings' &&
-             input$y_var == 'Category') {
+  } else if (x == 'Highest yearly earnings' &&
+             y == 'Category') {
     return(plots[10])
-  } else if (input$x_var == 'Highest yearly Earnings' &&
-             input$y_var == 'Country') {
+  } else if (x == 'Highest yearly earnings' &&
+             y == 'Country') {
     return(plots[11])
-  } else if (input$x_var == 'Longitude' &&
-             input$y_var == 'Latitude') {
+  } else if (x == 'Longitude' &&
+             y == 'Latitude') {
     return(plots[12])
   } else
     return(plots[13])
 }
-
 
 
 # User Interface
@@ -105,7 +149,9 @@ ui <- fluidPage(
       conditionalPanel(
         condition = "input.x_var == 'lowest_monthly_earnings' && input.y_var == 'density' || 
                      input.x_var == 'highest_monthly_earnings' && input.y_var == 'density'",
-        sliderInput("binwidth", "Binwidth:", min = 10, max = 100, value = 30)
+        sliderInput("binwidth", "Binwidth:", min = 10, max = 100, value = 30),
+        sliderInput("x_limit", "X-Axis Limit:", min = 0, max = 10000, value = c(0, 10000)),
+        sliderInput("y_limit", "Y-Axis Limit:", min = 0, max = 10000, value = c(0, 10000))
       )
     ),
     mainPanel(
@@ -119,14 +165,22 @@ server <- function(input, output, session) {
 
   observe({
     # Determine the plot type
-    plot_type <- determine_type()
+    plot_type <- determine_type(input$x_var, input$y_var)
     
     updateSelectInput(session, "y_var", choices=determine_y(input$x_var))
     
+    # Update binwidth and x y coordiante limit accordingly
     if (plot_type=="Distribution of Lowest Monthly Earnings(Log-scale)") {
       updateSliderInput(
         session,
         "binwidth",
+        min = 0.1,
+        max = 0.8,
+        value = 0.1
+      )
+      updateSliderInput(
+        session,
+        "x_limit",
         min = 0.1,
         max = 0.8,
         value = 0.1
@@ -139,11 +193,18 @@ server <- function(input, output, session) {
         max = 0.8,
         value = 0.1
       )
+      updateSliderInput(
+        session,
+        "x_limit",
+        min = 0.1,
+        max = 0.8,
+        value = 0.1
+      )
     }
   })
   
   output$plot <- renderPlot({
-    if (input$x_var == "Country" && input$y_var == "None") {
+    if (plot_type == "Number of Channels by Country") {
       ggplot(df, aes_string(x = input$x_var)) +
         geom_bar() +
         xlab(input$x_var)
