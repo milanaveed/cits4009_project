@@ -65,12 +65,13 @@ df <- read.csv(data.path)
 ```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 str(df)
 ```
-There are 995 obs of 28 variables, comprised by 14 factors, 2 integer and 4 numeric variables. But in fact columns, we can see that from the factors, some have too many levels: “use”, “posted_time”, “disbursed_time”, “funded_time”, “tags”, “borrower_genders” and “date”. This is because R treats any column for which it finds “string” data as factors by default. We will deal with these later on. From the numeric variables, partner_id and id are actually ids so they could be treated as factors or ignored for now.
+There are 995 obs of 28 variables in this date set, consisting of 7 character types, 4 integers and 17 numeric variables. 
 
 ### Using summary() to analyze the data
 ```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 summary(df)
 ```
+Some variables have big differences between the minimum value and the maximum value and are highly right-skewed, for example, "uploads", "subscribers", "lowest_monthly_earnings", "highest_monthly_earnings" and etc.
 
 ### Using head() to view the data
 ```{r  message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
@@ -80,7 +81,7 @@ From the first 6 rows of the data, we can discover some missing values or invali
 
 
 ## Transforming data
-Below are data treatments for missing/invalid/sentinel/outlier values, discretization, normalisation, log-scales and etc.
+Below are data treatments for missing/invalid/sentinel/outlier values.
 
 ### Cleaning data
 
