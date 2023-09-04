@@ -25,6 +25,7 @@ This project analises the data set of [Global YouTube Statistics 2023](https://w
 This data collection provides an opportunity to analyse and uncover valuable insights from leading YouTubers. Packed with comprehensive details on high-profile creators, this dataset serves as a treasure for those breaking into content creation, enthusiastic about data, and anyone interested in the constantly changing landscape of online content.
 
 # Performing ETL and setting up for plotting
+
 ## Loading libraries
 ```{r message=FALSE, warning=FALSE}
 library(ggplot2)
@@ -59,22 +60,24 @@ df <- read.csv(data.path)
 ```
 
 ## Data Overview
+
 ### Using str() to gain an overview
 ```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 str(df)
 ```
-
-
-### Using head() to analyze the data
-```{r  message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
-head(df)
-```
-From the first 6 rows of the data, we can discover some missing values or invalid values which we will convert later according to the need of plotting.
+There are 995 obs of 28 variables, comprised by 14 factors, 2 integer and 4 numeric variables. But in fact columns, we can see that from the factors, some have too many levels: “use”, “posted_time”, “disbursed_time”, “funded_time”, “tags”, “borrower_genders” and “date”. This is because R treats any column for which it finds “string” data as factors by default. We will deal with these later on. From the numeric variables, partner_id and id are actually ids so they could be treated as factors or ignored for now.
 
 ### Using summary() to analyze the data
 ```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 summary(df)
 ```
+
+### Using head() to view the data
+```{r  message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+head(df)
+```
+From the first 6 rows of the data, we can discover some missing values or invalid values which we will convert later according to the need of plotting.
+
 
 ## Transforming data
 Below are data treatments for missing/invalid/sentinel/outlier values, discretization, normalisation, log-scales and etc.
@@ -216,11 +219,11 @@ df1 <- subset(df, df$Country_isBad == FALSE & df$category_isBad == FALSE)
 # Select the first 15 unique country names
 selected_countries <- unique_countries[1:15]
 
-# Get all rows of the top 10 countries with the largest amount of famous channels
-top_10_country <- subset(df1, df1$Country %in% selected_countries)
+# Get all rows of the top 15 countries with the largest amount of famous channels
+top_15_country <- subset(df1, df1$Country %in% selected_countries)
 
 # Group country and category, then count the occurrences of each combination
-df_grouped <- top_10_country %>% 
+df_grouped <- top_15_country %>% 
               group_by(Abbreviation, category.fix) %>% 
               summarise(count = n())
 
@@ -232,6 +235,25 @@ ggplot(df_grouped, aes(x = Abbreviation, y = category.fix)) +
 ```
 
 India and the US have similar trend of popular categories. Both of the two countries have more leading channels in People&Blogs, Music and Entertainment. Other countries do not have obvious channel preferences.
+
+## Relationship between category and created year
+Explore the relationship between categories and countries.
+```{r}
+# Filter the dataset using the isBad indicator
+df1 <- subset(df, df$category_isBad == FALSE)
+
+# Group country and category, then count the occurrences of each combination
+df_grouped <- df1 %>% 
+              group_by(created_year, category.fix) %>% 
+              summarise(count = n())
+
+ggplot(df_grouped, aes(x = created_year, y = category.fix)) +
+  geom_count(aes(size = df_grouped$count, group = category.fix), color=my_color, alpha=0.7) +
+  scale_size_area(max_size=10, name="Amount") +
+  ggtitle("Category VS Created Year") +
+  color_theme
+```
+Music channels created between 2005 and 2016 were easier to stand out and attract subscribers. The number of prevalent music channels drastically reduced since 2016. In recent years, it has become harder for new music channels to develop into top channels. Entertainment channels and People&Blogs channels had the best performance among all new categories in the past 5 years. 
 
 # Content strategy analysis
 
