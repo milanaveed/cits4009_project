@@ -5,7 +5,7 @@ library(ggplot2)
 # Load your data from the current directory and store it in 'df'
 df <- read.csv("./youtube_UTF_8.csv")
 
-# Define x and y variable lists
+# Define x variable lists
 x_variables <-
   c(
     "None",
@@ -19,6 +19,7 @@ x_variables <-
     "Longitude"
   )
 
+# Define a function to get the available y options
 determine_y <- function(x){
   switch(x,
          "None" = c("None"),
@@ -33,6 +34,66 @@ determine_y <- function(x){
          "Longitude" = c("Latitude")
   )
 }
+
+# Create a list of names of available plots
+plots <- c(
+  "Number of Channels by Country",
+  "Category VS Country (Channels)",
+  "Category VS Created Year (Channels)",
+  "Category VS Country (Subscribers)",
+  "Number of Channels by Category",
+  "Number of Uploads VS Subscribers",
+  "Number of Uploads VS Video Views",
+  "Distribution of Lowest Monthly Earnings(Log-scale)",
+  "Distribution of Highest Monthly Earnings(Log-scale)",
+  "Highest Yearly Earnings by Category (by Median)",
+  "Highest Yearly Earnings by Country (Top 20 by Median)",
+  "Highest Yearly Earnings in Space",
+  "None"
+)
+
+# Define a function to check the plot type
+determine_type <- function() {
+  if (input$x_var == "Country" && input$y_var == "Number") {
+    return(plots[1])
+  } else if (input$x_var == "Country" &&
+             input$y_var == "Category (number of channels)") {
+    return(plots[2])
+  } else if (input$x_var == "Created Year" &&
+             input$y_var == "Category (number of channels)") {
+    return(plots[3])
+  } else if (input$x_var == "Created Year" &&
+             input$y_var == "Category (number of subscribers)") {
+    return(plots[4])
+  } else if (input$x_var == "Category" &&
+             input$y_var == "Number") {
+    return(plots[5])
+  } else if (input$x_var == "Number of uploads" &&
+             input$y_var == "Number of subscribers") {
+    return(plots[6])
+  } else if (input$x_var == "Number of uploads" &&
+             input$y_var == "Number of Video Views") {
+    return(plots[7])
+  } else if (input$x_var == 'Lowest monthly Earnings' &&
+             input$y_var == 'Density') {
+    return(plots[8])
+  } else if (input$x_var == 'Highest monthly Earnings' &&
+             input$y_var == 'Density') {
+    return(plots[9])
+  } else if (input$x_var == 'Highest yearly Earnings' &&
+             input$y_var == 'Category') {
+    return(plots[10])
+  } else if (input$x_var == 'Highest yearly Earnings' &&
+             input$y_var == 'Country') {
+    return(plots[11])
+  } else if (input$x_var == 'Longitude' &&
+             input$y_var == 'Latitude') {
+    return(plots[12])
+  } else
+    return(plots[13])
+}
+
+
 
 # User Interface
 ui <- fluidPage(
@@ -55,64 +116,7 @@ ui <- fluidPage(
 
 # Server logic
 server <- function(input, output, session) {
-  # Create a list of names of available plots
-  plots <- c(
-    "Number of Channels by Country",
-    "Category VS Country (Channels)",
-    "Category VS Created Year (Channels)",
-    "Category VS Country (Subscribers)",
-    "Number of Channels by Category",
-    "Number of Uploads VS Subscribers",
-    "Number of Uploads VS Video Views",
-    "Distribution of Lowest Monthly Earnings(Log-scale)",
-    "Distribution of Highest Monthly Earnings(Log-scale)",
-    "Highest Yearly Earnings by Category (by Median)",
-    "Highest Yearly Earnings by Country (Top 20 by Median)",
-    "Highest Yearly Earnings in Space",
-    "None"
-  )
-  
-  # Define a function to check the plot type
-  determine_type <- function() {
-    if (input$x_var == "Country" && input$y_var == "Number") {
-      return(plots[1])
-    } else if (input$x_var == "Country" &&
-               input$y_var == "Category (number of channels)") {
-      return(plots[2])
-    } else if (input$x_var == "Created Year" &&
-               input$y_var == "Category (number of channels)") {
-      return(plots[3])
-    } else if (input$x_var == "Created Year" &&
-               input$y_var == "Category (number of subscribers)") {
-      return(plots[4])
-    } else if (input$x_var == "Category" &&
-               input$y_var == "Number") {
-      return(plots[5])
-    } else if (input$x_var == "Number of uploads" &&
-               input$y_var == "Number of subscribers") {
-      return(plots[6])
-    } else if (input$x_var == "Number of uploads" &&
-               input$y_var == "Number of Video Views") {
-      return(plots[7])
-    } else if (input$x_var == 'Lowest monthly Earnings' &&
-               input$y_var == 'Density') {
-      return(plots[8])
-    } else if (input$x_var == 'Highest monthly Earnings' &&
-               input$y_var == 'Density') {
-      return(plots[9])
-    } else if (input$x_var == 'Highest yearly Earnings' &&
-               input$y_var == 'Category') {
-      return(plots[10])
-    } else if (input$x_var == 'Highest yearly Earnings' &&
-               input$y_var == 'Country') {
-      return(plots[11])
-    } else if (input$x_var == 'Longitude' &&
-               input$y_var == 'Latitude') {
-      return(plots[12])
-    } else
-      return(plots[13])
-  }
-  
+
   observe({
     # Determine the plot type
     plot_type <- determine_type()
