@@ -130,8 +130,6 @@ df <- mutate(df,
 
 
 ### Filtering data
-TODO:
-- take out the NA values in category, country, uploads? ISBAD indicator同步修改plotting
 
 #### Dealing with missing values in column Country and category
 When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Country](#earnings-by-country), a country named `NA` was displayed initially. We replace the NAs with a new category `Missing`.
@@ -151,11 +149,11 @@ df$uploads_isBad <- is.na(df$uploads)
 df$video.views_isBad <- is.na(df$video.views)
 ```
 
-#### Removing rows of NA in column created_year
+#### Removing rows of NA in column created_year and video.views
 ****
 We calculte the occurrences of NA in created_year and there are only 6 invalid values, and thus has small impact on the whole dataset. We can remove it safely.
 ```{r}
-df <- subset(df, !is.na(df$created_year))
+df <- subset(df, !is.na(df$created_year) & !is.na(df$video.views))
 ```
 
 
@@ -194,12 +192,13 @@ countryf <- countryf %>% arrange(desc(countryf$count))
 # Get unique country names
 unique_countries <- unique(countryf$country)
 
-# Select the first 10 unique country names
+# Select the first 25 unique country names
 selected_countries <- unique_countries[1:25]
 
-# Get all rows of the top 10 countries with the largest amount of famous channels
+# Get all rows of the top 25 countries with the largest amount of famous channels
 top_25_country <- subset(countryf, countryf$country %in% selected_countries)
 
+# Sort the subset
 top_25_country <- transform(top_25_country,
                       country = reorder(country, count))
 
@@ -218,22 +217,18 @@ Among those countries, the US, India, and Brazil have the most amount of leading
 Explore the relationship between categories and countries.
 ```{r}
 # Filter the dataset using the isBad indicator
-df1 <- subset(df, df$Country_isBad == FALSE)
+df1 <- subset(df, df$Country_isBad == FALSE & df$category_isBad == FALSE)
 
-# Create a subset containing only two columns for later plotting
-df1 <- subset(df1, select = c("Country", "category.fix"))
+# Select the first 10 unique country names
+selected_countries <- unique_countries[1:10]
 
-# Sort the data frame
-df1 <- df1 %>% arrange(desc(df_grouped$count))
-
+# Get all rows of the top 10 countries with the largest amount of famous channels
+top_10_country <- subset(df1, df1$Country %in% selected_countries)
 
 # Group country and category, then count the occurrences of each combination
-df_grouped <- df1 %>% 
-              group_by(Country, category.fix) %>% 
+df_grouped <- top_10_country %>% 
+              group_by(Abbreviation, category.fix) %>% 
               summarise(count = n())
-
-
-df_grouped
 
 # Get unique country names
 #unique_countries <- unique($Country)
@@ -244,11 +239,9 @@ df_grouped
 # # Get all rows of the top 10 countries with the largest amount of famous channels
 # top_10_country <- subset(df_median_earnings_country_des, df_median_earnings_country_des$Country %in% selected_countries)
 
-
-
-ggplot(df_grouped, aes(x = category.fix, y = Country)) +
-  geom_count(aes(size = df_grouped$count, group = category.fix)) +
-  scale_size_area(max_size=10) +
+ggplot(df_grouped, aes(x = Abbreviation, y = category.fix)) +
+  geom_count(aes(size = df_grouped$count, group = category.fix), color=my_color, alpha=0.6) +
+  scale_size_area(max_size=10, name="Count") +
   color_theme
 ```
 
