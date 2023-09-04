@@ -164,9 +164,6 @@ ui <- fluidPage(
 server <- function(input, output, session) {
 
   observe({
-    # Determine the plot type
-    plot_type <- determine_type(input$x_var, input$y_var)
-    
     updateSelectInput(session, "y_var", choices=determine_y(input$x_var))
     
     # Update binwidth and x y coordiante limit accordingly
@@ -203,36 +200,67 @@ server <- function(input, output, session) {
     }
   })
   
+  # Define functions for plotting
+  g1 <- function(df, x_var) {
+    # Filter the dataset using the isBad indicator
+    df1 <- subset(df, df$Country_isBad == FALSE)
+    # Sort the data
+    dfsums <- table(df1$Country)
+    # Convert the table object into a data frame
+    countryf <- as.data.frame(dfsums)
+    # Define the column names
+    colnames(countryf) <- c("country", "count")
+    # Sort the data frame
+    countryf <- countryf %>% arrange(desc(countryf$count))
+    # Get unique country names
+    unique_countries <- unique(countryf$country)
+    # Select the first 25 unique country names
+    selected_countries <- unique_countries[1:25]
+    # Get all rows of the top 25 countries with the largest amount of famous channels
+    top_25_country <- subset(countryf, countryf$country %in% selected_countries)
+    # Sort the subset
+    top_25_country <- transform(top_25_country,
+                                country = reorder(country, count))
+    # Plot the bar chart
+    ggplot(top_25_country, aes_string(x = country, y = count)) +
+      geom_bar(stat = "identity", fill = my_color, alpha = 0.60) +
+      coord_flip() +
+      ggtitle("Number by Country (Top 25)") +
+      xlab(x_var)+
+      color_theme
+  }
+  
   output$plot <- renderPlot({
+    # Determine the plot type
+    plot_type <- determine_type(input$x_var, input$y_var)
+    
     if (plot_type == "Number of Channels by Country") {
-      ggplot(df, aes_string(x = input$x_var)) +
-        geom_bar() +
-        xlab(input$x_var)
-    } else if (input$x_var == "Country" && input$y_var == "Density") {
-      ggplot(df, aes_string(x = input$x_var, y = input$y_var)) +
-        geom_count() +
-        xlab(input$x_var) +
-        ylab(input$y_var)
-    } else if ((input$x_var == 'lowest_monthly_earnings' && input$y_var == 'density') || 
-               (input$x_var == 'highest_monthly_earnings' && input$y_var == 'density')) {
-      ggplot(df, aes_string(x = input$x_var)) +
-        geom_histogram(binwidth = input$binwidth) +
-        xlab(input$x_var) +
-        ylab('Density')
+      g1(df, input$x_var)
+      print(g1)
+      
     } else {
-      if (input$y_var != "None") {
-        ggplot(df, aes_string(x = input$x_var, y = input$y_var)) +
-          geom_point() +
-          xlab(input$x_var) +
-          ylab(input$y_var)
-      } else {
-        # ggplot(df, aes_string(x = input$x_var)) +
-        #   geom_histogram(binwidth = 30) +
-        #   xlab(input$x_var)
-      }
+      
     }
   })
 }
 
 # Create Shiny App
 shinyApp(ui, server)
+
+# } else if (plot_type == "Category VS Country (Channels)") {
+#   ggplot(df, aes_string(x = input$x_var, y = input$y_var)) +
+#     geom_count() +
+#     xlab(input$x_var) +
+#     ylab(input$y_var)
+# } else if ((input$x_var == 'lowest_monthly_earnings' && input$y_var == 'density') || 
+#            (input$x_var == 'highest_monthly_earnings' && input$y_var == 'density')) {
+#   ggplot(df, aes_string(x = input$x_var)) +
+#     geom_histogram(binwidth = input$binwidth) +
+#     xlab(input$x_var) +
+#     ylab('Density')
+# } else {
+#   if (input$y_var != "None") {
+#     ggplot(df, aes_string(x = input$x_var, y = input$y_var)) +
+#       geom_point() +
+#       xlab(input$x_var) +
+#       ylab(input$y_var)
