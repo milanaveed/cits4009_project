@@ -163,16 +163,10 @@ df <- subset(df, !is.na(df$created_year) & !is.na(df$video.views))
 #count_value_2 <- filter(data_counted, column1 == 2)$n
 ```
 
-## Loading data
-Save the cleaned and transformed data
-```{r}
-#write.csv(df_filtered, "./data/youtube_data_cleaned")
-```
-
 # General analysis
 
 ## Country with popular channels
-Plot the country information to gain insights of coutries with popular channels. A bar chart will present the amount of each country and reveal the top countries easily.
+Plot the country information to gain insights of coutries with popular channels. A bar chart will present the amount of each country and reveal the number of channels of top countries easily.
 ```{r}
 # Filter the dataset using the isBad indicator
 df1 <- subset(df, df$Country_isBad == FALSE)
@@ -204,7 +198,7 @@ top_25_country <- transform(top_25_country,
 
 # Plot the bar chart
 ggplot(top_25_country) +
-    geom_bar(aes(x = country, y = count), stat = "identity", fill = my_color, alpha = 0.40) +
+    geom_bar(aes(x = country, y = count), stat = "identity", fill = my_color, alpha = 0.60) +
     coord_flip() +
     ggtitle("Number by Country (Top 25)") +
     color_theme
@@ -219,8 +213,8 @@ Explore the relationship between categories and countries.
 # Filter the dataset using the isBad indicator
 df1 <- subset(df, df$Country_isBad == FALSE & df$category_isBad == FALSE)
 
-# Select the first 10 unique country names
-selected_countries <- unique_countries[1:10]
+# Select the first 15 unique country names
+selected_countries <- unique_countries[1:15]
 
 # Get all rows of the top 10 countries with the largest amount of famous channels
 top_10_country <- subset(df1, df1$Country %in% selected_countries)
@@ -230,20 +224,14 @@ df_grouped <- top_10_country %>%
               group_by(Abbreviation, category.fix) %>% 
               summarise(count = n())
 
-# Get unique country names
-#unique_countries <- unique($Country)
-
-# # Select the first 10 unique country names
-# selected_countries <- unique_countries[1:10]
-#
-# # Get all rows of the top 10 countries with the largest amount of famous channels
-# top_10_country <- subset(df_median_earnings_country_des, df_median_earnings_country_des$Country %in% selected_countries)
-
 ggplot(df_grouped, aes(x = Abbreviation, y = category.fix)) +
-  geom_count(aes(size = df_grouped$count, group = category.fix), color=my_color, alpha=0.6) +
-  scale_size_area(max_size=10, name="Count") +
+  geom_count(aes(size = df_grouped$count, group = category.fix), color=my_color, alpha=0.7) +
+  scale_size_area(max_size=10, name="Amount") +
+  ggtitle("Category VS Country") +
   color_theme
 ```
+
+India and the US have similar trend of popular categories. Both of the two countries have more leading channels in People&Blogs, Music and Entertainment. Other countries do not have obvious channel preferences.
 
 # Content strategy analysis
 
@@ -264,7 +252,7 @@ categoryf <- transform(categoryf,
                        category = reorder(category, count))
 # Plot the bar chart
 ggplot(categoryf) +
-  geom_bar(aes(x = category, y = count), stat = "identity", fill = my_color, alpha = 0.40) +
+  geom_bar(aes(x = category, y = count), stat = "identity", fill = my_color, alpha = 0.60) +
   coord_flip() +
   ggtitle("Number by Category") +
   color_theme
@@ -303,7 +291,7 @@ Zoom in and inspect the range of uploads from 0 to 1000.
 ```{r}
 ggplot(df1, aes(x = uploads, y = subscribers)) +
       geom_point(color = my_color, alpha = 0.3) + 
-      geom_smooth(method = "lm", se=FALSE, color="darkgrey") +
+      geom_smooth(method = "lm", se=FALSE, color= "#DDA0DD") +
       coord_cartesian(xlim = c(0,500), ylim = c(0, 1.0e+08)) +
       ggtitle("Number of Uploads VS Subscribers") +
       color_theme
@@ -334,7 +322,7 @@ Zoom in and inspect the range of uploads from 0 to 1000.
 ```{r}
 ggplot(df1, aes(x = uploads, y = video.views)) +
       geom_point(color = my_color, alpha = 0.3) + 
-      geom_smooth(method = "lm", se=FALSE, color="darkgrey") +
+      geom_smooth(method = "lm", se=FALSE, color="#DDA0DD") +
       coord_cartesian(xlim = c(0,1000), ylim = c(0,5e+10)) +
       ggtitle("Number of Uploads VS Subscribers") +
       color_theme
@@ -443,10 +431,7 @@ ggplot(top_20_country, aes(x = highest_yearly_earnings, y = reorder(Country.fix,
 
 The popular channel from Latvia has a distinctively higher value of highest yearly earnings among all the countries.
 
-
-# EDA: Geospatial information
-
-## Country distribution in space
+## Geospatial information: country distribution in space
 With longitude and latitude provided in the dataset, we are able to visualise the country distribution in the aspect of earnings analysis.
 ```{r}
 # Data preparation
