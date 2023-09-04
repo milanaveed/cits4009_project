@@ -1,0 +1,493 @@
+---
+title: "CITS4009 - Project 1"
+author: "Mila Zhang (22756463)"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+  html_notebook: 
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+# Introduction to the YouTube dataset
+
+This project analises the data set of [Global YouTube Statistics 2023](https://www.kaggle.com/datasets/nelgiriyewithana/global-youtube-statistics-2023) and it can be obtained from the Kaggle platform.
+
+This data collection provides an opportunity to analyse and uncover valuable insights from leading YouTubers. Packed with comprehensive details on high-profile creators, this dataset serves as a treasure for those breaking into content creation, enthusiastic about data, and anyone interested in the constantly changing landscape of online content.
+
+# Performing ETL and setting up for plotting
+
+## Loading libraries
+```{r message=FALSE, warning=FALSE}
+library(ggplot2)
+library(gridExtra)
+library(GGally)
+library(dplyr)
+library(ggthemes)
+library(lubridate)
+library(ca)
+library(ggmap)
+library(sp)
+library(maptools)
+library(maps)
+```
+
+## Setting up a plotting theme
+```{r}
+my_color <- "#2061F2"
+color_theme <- theme_few() + # Theme based on S. Few's "Practical Rules for Using Color in Charts"
+               theme(plot.title = element_text(color = my_color),
+                     plot.margin = margin(10, 20, 10, 20)) +
+               theme(strip.text.x = element_text(size = 14, colour = "#202020"))
+```
+
+## Extracting data
+```{r}
+data.path <- './youtube_UTF_8.csv'
+df <- read.csv(data.path)
+```
+
+## Data Overview
+
+### Using str() to gain an overview
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+str(df)
+```
+There are 995 obs of 28 variables in this date set, consisting of 7 character types, 4 integers and 17 numeric variables. 
+
+### Using summary() to analyze the data
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+summary(df)
+```
+Some variables have big differences between the minimum value and the maximum value and are highly right-skewed, for example, "uploads", "subscribers", "lowest_monthly_earnings", "highest_monthly_earnings" and etc.
+
+### Using head() to view the data
+```{r  message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+head(df)
+```
+From the first 6 rows of the data, we can discover some missing values or invalid values which we will convert later according to the need of plotting.
+
+
+## Transforming data
+Below are data treatments for missing/invalid/sentinel/outlier values.
+
+### Cleaning data
+
+#### Cleaning column created_year
+YouTube was created in 2005, so any channel on YouTube should be created in or after 2005. If the created year of a channel is earlier than 2005, then this variable contains invalid value. Also, valid values in the column `created_year` are supposed to be numbers, any NaN value should be turned into NA.
+```{r}
+df <- mutate(df,
+             created_year = ifelse(created_year < 2005, NA, created_year))
+```
+
+We can check our data cleaning by counting the occurrences of each value in the column.
+```{r}
+df %>% count(created_year)
+```
+Now we have converted those invalid values into NA.
+
+
+#### Cleaning column category
+When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Category](#earnings-by-category), some values of `nan` were involved initially. We first turn them into NA values.
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+df <- mutate(df,
+             category = ifelse(category=="nan", NA, category))
+df %>% count(category)
+```
+After inspecting the occurrences of each value in the column category, we found that there are 46 NA values. 
+
+#### Cleaning column Country
+When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Country](#earnings-by-country), some values of `nan` were involved initially. We first turn them into NA values.
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+df <- mutate(df,
+             Country = ifelse(Country=="nan", NA, Country))
+df %>% count(Country)
+```
+After inspecting the occurrences of each value in the column Country, we found that there are 122 NA values. 
+
+#### Dealing with missing values in column uploads
+When plotting the relationship between the number of uploads and subscribers, there were some points with value 0. A leading Youtuber is supposed to have more than 0 uploads. We turn those 0 uploads into NAs.
+```{r}
+df <- mutate(df,
+             uploads = ifelse(uploads==0, NA, uploads))
+```
+
+#### Dealing with invalid values in column video.views
+According to common sense and through observation of the dataset, some values in the `video.views` are distinctively smaller than others. We turn those abnormal values into NAs.
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+df <- mutate(df,
+             video.views = ifelse(video.views<1000000, NA, video.views))
+df %>% count(df$video.views)
+```
+
+
+### Filtering data
+
+#### Dealing with missing values in column Country and category
+When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Country](#earnings-by-country), a country named `NA` was displayed initially. We replace the NAs with a new category `Missing`.
+```{r}
+df$Country.fix <- ifelse(is.na(df$Country),
+                  "Missing", df$Country)
+df$category.fix <- ifelse(is.na(df$category),
+                  "Uncategorised", df$category)
+```
+
+#### Adding isBad indicators
+Add isBad indicators to columns Country, category and uploads.
+```{r}
+df$Country_isBad <- is.na(df$Country)
+df$category_isBad <- is.na(df$category)
+df$uploads_isBad <- is.na(df$uploads)
+df$video.views_isBad <- is.na(df$video.views)
+```
+
+#### Removing rows of NA in column created_year and video.views
+When plotting [Category VS Created Year (Channels)]({#category-vs-created-year}) and [Number of Uploads VS Video Views]({#number-of-uploads-vs-video-views})
+We calculte the occurrences of NA in created_year and there are only 6 invalid values, and thus has small impact on the whole dataset. We can remove it safely.
+```{r}
+df <- subset(df, !is.na(df$created_year) & !is.na(df$video.views))
+```
+
+
+# General analysis
+
+## Country with popular channels
+Plot the country information to gain insights of coutries with popular channels. A bar chart will present the amount of each country and reveal the number of channels of top countries easily.
+```{r}
+# Filter the dataset using the isBad indicator
+df1 <- subset(df, df$Country_isBad == FALSE)
+
+# Sort the data
+dfsums <- table(df1$Country)
+
+# Convert the table object into a data frame
+countryf <- as.data.frame(dfsums)
+
+# Define the column names
+colnames(countryf) <- c("country", "count")
+
+# Sort the data frame
+countryf <- countryf %>% arrange(desc(countryf$count))
+
+# Get unique country names
+unique_countries <- unique(countryf$country)
+
+# Select the first 25 unique country names
+selected_countries <- unique_countries[1:25]
+
+# Get all rows of the top 25 countries with the largest amount of famous channels
+top_25_country <- subset(countryf, countryf$country %in% selected_countries)
+
+# Sort the subset
+top_25_country <- transform(top_25_country,
+                      country = reorder(country, count))
+
+# Plot the bar chart
+ggplot(top_25_country) +
+    geom_bar(aes(x = country, y = count), stat = "identity", fill = my_color, alpha = 0.60) +
+    coord_flip() +
+    ggtitle("Number by Country (Top 25)") +
+    color_theme
+```
+
+Among those countries, the US, India, and Brazil have the most amount of leading YouTubers.
+
+
+## Relationship of the number of channels between category and country
+Explore the relationship between categories and countries.
+```{r}
+# Filter the dataset using the isBad indicator
+df1 <- subset(df, df$Country_isBad == FALSE & df$category_isBad == FALSE)
+
+# Select the first 15 unique country names
+selected_countries <- unique_countries[1:15]
+
+# Get all rows of the top 15 countries with the largest amount of famous channels
+top_15_country <- subset(df1, df1$Country %in% selected_countries)
+
+# Group country and category, then count the occurrences of each combination
+df_grouped <- top_15_country %>% 
+              group_by(Abbreviation, category.fix) %>% 
+              summarise(count = n())
+
+ggplot(df_grouped, aes(x = Abbreviation, y = category.fix)) +
+  geom_count(aes(size = df_grouped$count, group = category.fix), color=my_color, alpha=0.7) +
+  scale_size_area(max_size=10, name="Channels") +
+  ggtitle("Category VS Country (Number of Channels)") +
+  color_theme
+```
+
+India and the US have similar trend of popular categories. Both of the two countries have more leading channels in People&Blogs, Music and Entertainment. Other countries do not have obvious channel preferences.
+
+## Relationship of the number of channels between category and created year {#category-vs-created-year}
+Explore the relationship between categories and countries.
+```{r}
+# Filter the dataset using the isBad indicator
+df1 <- subset(df, df$category_isBad == FALSE)
+
+# Group country and category, then count the occurrences of each combination
+df_grouped1 <- df1 %>% 
+              group_by(created_year, category.fix) %>% 
+              summarise(count = n())
+
+ggplot(df_grouped1, aes(x = created_year, y = category.fix)) +
+  geom_count(aes(size = df_grouped1$count, group = category.fix), color=my_color, alpha=0.7) +
+  scale_size_area(max_size=10, name="Channels") +
+  ggtitle("Category VS Created Year (Number of Channels)") +
+  color_theme
+```
+
+Music channels created between 2005 and 2016 were easier to stand out and attract subscribers. The number of prevalent music channels drastically reduced since 2016. In recent years, it has become harder for new music channels to develop into top channels. Entertainment channels and People&Blogs channels had the best performance among all new categories in the past 5 years. 
+
+## Relationship between the number of subscribers of each category and country
+Explore the relationship between categories and countries.
+```{r}
+# Group country and category, then count the sum of subcribers for each combination
+df_grouped2 <- top_15_country %>% 
+              group_by(Abbreviation, category.fix) %>% 
+              summarise(count = sum(subscribers))
+
+ggplot(df_grouped2, aes(x = Abbreviation, y = category.fix)) +
+  geom_count(aes(size = df_grouped2$count, group = category.fix), color=my_color, alpha=0.7) +
+  scale_size_area(max_size=10, name="Subscribers") +
+  ggtitle("Category VS Country (Number of Subscribers)") +
+  color_theme
+```
+
+Music and entertainment channels created in India and the US have the largestest total number of suscribers among those 15 countries, which are much larger than that of other countries.
+
+# Content strategy analysis
+
+## Category of popular channels
+Using a bar chart makes it easy to compare different categories and can present a range of data effectively, is a better option compared with pie charts or donut charts when showing the relationship of each category. Plot the channel category to gain insights of popular categories.
+```{r}
+# Sort the data
+dfsums <- table(df$category.fix)
+
+# Convert the table object into a data frame
+categoryf <- as.data.frame(dfsums)
+
+# Define the column names
+colnames(categoryf) <- c("category", "count")
+
+# Sort the data frame
+categoryf <- transform(categoryf,
+                       category = reorder(category, count))
+# Plot the bar chart
+ggplot(categoryf) +
+    geom_bar(aes(x = category, y = count), stat = "identity", fill = my_color, alpha = 0.60) +
+    coord_flip() +
+    ggtitle("Number by Category") +
+    color_theme
+```
+
+We can see that Entertainment, Music, People & Blogs are the most popular categories among those leading channels we anaylse.
+ 
+## Relationship between the number of uploads and subscribers
+
+Use ggpairs() to gain a quick overview of the visualization and relationships among variables.
+```{r}
+# Provide an overview of a set of visualization
+ggpairs(
+  df[, c("subscribers", "video.views", "uploads")],
+  title = "Subscribers vs Video Views vs Uploads")
+```
+
+Plot the relationship between uploads and subscribers.
+```{r}
+# Filter the dataset
+df1 <- subset(df, df$uploads_isBad == FALSE)
+  
+p1 <- ggplot(df1, aes(x = uploads, y = subscribers)) +
+      geom_point(color = my_color, alpha = 0.3) + 
+      labs(x = "") + # Hide x coordinate label
+      ggtitle("Number of Uploads VS Subscribers") +
+      color_theme
+
+p2 <- ggplot(df1, aes(x = uploads, y = subscribers)) +
+      geom_smooth() + 
+      color_theme
+
+grid.arrange(p1, p2, ncol=1)
+```
+
+Zoom in and inspect the range of uploads from 0 to 1000.
+```{r}
+ggplot(df1, aes(x = uploads, y = subscribers)) +
+      geom_point(color = my_color, alpha = 0.3) + 
+      geom_smooth(method = "lm", se=FALSE, color= "#DDA0DD") +
+      coord_cartesian(xlim = c(0,500), ylim = c(0, 1.0e+08)) +
+      ggtitle("Number of Uploads VS Subscribers") +
+      color_theme
+```
+
+No apparent liner correlation between number of uploads and subscribers for those YouTube giants.
+
+## Relationship between the number of uploads and video.views {#number-of-uploads-vs-video-views}
+To reveal the relationship between two variables uploads and video.views, a point geom and a smooth geom will present the density, distribution and trend in a simplified and direct way.
+```{r}
+# Filter the dataset using the isBad indicators
+df1 <- subset(df, df$uploads_isBad == FALSE & df$video.views_isBad == FALSE)
+
+p1 <- ggplot(df1, aes(x = uploads, y = video.views)) +
+      geom_point(color = my_color, alpha = 0.3) + 
+      labs(x = "") + # Hide x coordinate label
+      ggtitle("Number of Uploads VS Video Views") +
+      color_theme
+
+p2 <- ggplot(df1, aes(x = uploads, y = video.views)) +
+      geom_smooth() + 
+      color_theme
+
+grid.arrange(p1, p2, ncol=1)
+```
+
+Zoom in and inspect the range of uploads from 0 to 1000.
+```{r}
+ggplot(df1, aes(x = uploads, y = video.views)) +
+      geom_point(color = my_color, alpha = 0.3) + 
+      geom_smooth(method = "lm", se=FALSE, color="#DDA0DD") +
+      coord_cartesian(xlim = c(0,1000), ylim = c(0,5e+10)) +
+      ggtitle("Number of Uploads VS Subscribers") +
+      color_theme
+```
+
+No apparent liner correlation between number of uploads and video views for those YouTube giants.
+
+# EDA: Earnings analysis
+
+## Distribution of earnings
+Since "lowest_monthly_earnings" and "highest_monthly_earnings" are right-skewed variables, we will use two histograms to analyze each of the distribution: one with a log10 scale and one with a truncated linear scale.
+```{r}
+p1 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
+  geom_histogram(aes(y=..density..), binwidth= 0.1, fill = "grey") +
+  geom_density(color= my_color)+
+  scale_x_log10(breaks=c(100,2000,25000,200000))+
+  annotate("text", x = 100, y = 0.5, label = paste("The lowest monthly earnings peak"," at around 25000", sep="\n"))+
+  ggtitle("Distribution of Lowest Monthly Earnings (Log-scale)") +
+  color_theme
+
+p2 <- ggplot(df, aes(x = lowest_monthly_earnings)) +
+  geom_histogram(aes(y=..density..), binwidth=3000, fill = "grey") +
+  geom_density(color=my_color)+
+  scale_x_continuous(breaks=c(100000), limits = c(0, 2.1e+05), oob = scales::oob_squish)+
+  scale_y_continuous(limits = c(0, 0.00005), oob = scales::oob_squish)+
+  annotate("text", x = 100000, y = 3e-05, label = paste("Most of the distribution is concentrated", "at the low end: less than 100000", sep="\n"))+
+  ggtitle("Distribution of Lowest Monthly Earnings") +
+  color_theme
+
+grid.arrange(p1, p2, ncol=1)
+```
+
+Most of the distribution is concentrated at the low end and less than 200000. And the lowest monthly earning peaks at around 25000.
+
+```{r}
+p1 <- ggplot(df, aes(x = highest_monthly_earnings)) +
+  geom_histogram(aes(y =..density..), binwidth= 0.1, fill = "grey") +
+  geom_density(color = my_color)+
+  scale_x_log10(breaks = c(100,2000,25000,400000))+
+  annotate("text", x = 500, y = 0.4, label = paste("The highest monthly earnings peak", "at around 400000", sep="\n"))+
+  ggtitle("Distribution of Highest Monthly Earnings (Log-scale)") +
+  color_theme
+
+hme_Q1 <- boxplot.stats(df$highest_monthly_earnings)$stats[2]
+hme_Q3 <- boxplot.stats(df$highest_monthly_earnings)$stats[4]
+hme_IQR <- hme_Q3-hme_Q1
+hme_Q4 <- hme_Q3 + 1.5*hme_IQR
+
+p2 <- ggplot(df, aes(x = highest_monthly_earnings)) +
+  geom_histogram(aes(y=..density..), binwidth=25000, fill = "grey") +
+  geom_density(color=my_color)+
+  scale_x_continuous(breaks=c(25000,hme_Q3), limits = c(0, hme_Q4), oob = scales::oob_squish)+
+  ggtitle("Distribution of Highest Monthly Earnings") +
+  color_theme
+
+grid.arrange(p1, p2, ncol=1)
+```
+
+There is a big contrast in the The highest monthly earnings vary greatly among leading YouTubers, with few people having very high earnings and most people have relatively low 
+
+## Earnings by category {#earnings-by-category}
+Next we analyze how earnings differ across different YouTube channel categories by using a boxplot and a jitter geom. The combination of a boxplot and a gitter plot will provide useful information, including central tendency, spread and density. It allows easy comparisons across different categories and also provide details and visual clarity.
+```{r}
+# Calculate median for each category
+df$median_earnings_category <- with(df, ave(highest_yearly_earnings, category.fix, FUN=median))
+
+# Create the boxplot
+ggplot(df, aes(x = reorder(category.fix, median_earnings_category), y = highest_yearly_earnings)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(alpha = 0.2, color = my_color) +
+  coord_flip(ylim = c(0, 6e+07)) +
+  ggtitle("Highest Yearly Earnings by Category (by Median)") +
+  color_theme
+```
+
+All categories have similar median values except Autos & Vehicles, whose median is significantly larger than others. Pets & Animals channel has the smallest median value of highest yearly earnings.
+
+
+## Earnings by country {#earnings-by-country}
+By showing the distribution information such as median and quartiles, a boxplot is ideal in comparing distributions across different countries, and can be used in analysing the highest yearly earnings of the top YouTube channels by country. The combination of a boxplot and a gitter plot will provide useful information, including central tendency, spread and density. There are too many countries in the dataset so we select 20 countries with the largest median value of highest yearly earnings. 
+
+```{r warning=FALSE}
+# Calculate median for each country
+df$median_earnings_country <- with(df, ave(highest_yearly_earnings, Country.fix, FUN=median))
+
+# Sort the data frame 
+df_median_earnings_country_des <- df %>% arrange(desc(median_earnings_country))
+
+# Get unique country names
+unique_countries <- unique(df_median_earnings_country_des$Country)
+
+# Select the first 20 unique country names
+selected_countries <- unique_countries[1:20]
+
+# Get all rows of the top 20 countries
+top_20_country <- subset(df_median_earnings_country_des, df_median_earnings_country_des$Country %in% selected_countries)
+
+# Create the boxplot
+ggplot(top_20_country, aes(x = highest_yearly_earnings, y = reorder(Country.fix, median_earnings_country))) +
+    geom_boxplot(outlier.shape = NA) +
+    geom_jitter(alpha = 0.3, color = my_color) +
+    coord_cartesian(xlim = c(0, 7e+07)) +
+    ggtitle("Highest Yearly Earnings by Country (Top 20 by Median)") +
+    color_theme
+```
+
+The popular channel from Latvia has a distinctively higher value of highest yearly earnings among all the countries.
+
+## Geospatial information: country distribution in space
+With longitude and latitude provided in the dataset, we are able to visualise the country distribution in the aspect of earnings analysis.
+```{r}
+# Data preparation
+visit.x <- df$Longitude
+visit.y <- df$Latitude  
+
+mp <- NULL #Create an empty map
+mapworld <- borders("world",colour = "gray50",fill="white") #Draw the map
+mp <- ggplot() + mapworld + ylim(-60, 90)
+# Draw the points
+mp2 <-
+  mp + geom_point(aes(
+    x = visit.x,
+    y = visit.y,
+    size = df$highest_yearly_earnings),
+    color = my_color) +
+    scale_size(range = c(2, 10)) +
+    ggtitle("Geospatial Information About Highest Yearly Earnings")
+mp3 <- mp2 + color_theme + theme(legend.position = "none")
+mp3
+```
+
+Channels with high yearly earnings are mainly located in Europe, South Africa, the middle east and the South-East Asia.
+
+# Shiny App Video Link
+[Shiny Display: https://youtu.be/nYzzg7dExkk](https://youtu.be/nYzzg7dExkk)

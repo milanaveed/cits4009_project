@@ -68,9 +68,9 @@ x_variables <-
 determine_y <- function(x){
   switch(x,
          "None" = c("None"),
-         "Country" = c("Number","Category (number of channels)"),
-         "Created year" = c("Category (number of channels)",
-                            "Category (number of subscribers)"),
+         "Country" = c("Category (number of channels)",
+                       "Category (number of subscribers)"),
+         "Created year" = c("Category (number of channels)"),
          "Category" = c("Number"),
          "Number of uploads"=c("Number of subscribers","Number of video views"),
          "Lowest monthly earnings" = c("Density"),
@@ -97,47 +97,6 @@ plots <- c(
   "None"
 )
 
-# Define a function to check the plot type
-determine_type <- function(x, y) {
-  if (x == "Country" && y == "Number") {
-    return(plots[1])
-  } else if (x == "Country" &&
-             y == "Category (number of channels)") {
-    return(plots[2])
-  } else if (x == "Created year" &&
-             y == "Category (number of channels)") {
-    return(plots[3])
-  } else if (x == "Created year" &&
-             y == "Category (number of subscribers)") {
-    return(plots[4])
-  } else if (x == "Category" &&
-             y == "Number") {
-    return(plots[5])
-  } else if (x == "Number of uploads" &&
-             y == "Number of subscribers") {
-    return(plots[6])
-  } else if (x == "Number of uploads" &&
-             y == "Number of video views") {
-    return(plots[7])
-  } else if (x == 'Lowest monthly earnings' &&
-             y == 'Density') {
-    return(plots[8])
-  } else if (x == 'Highest monthly earnings' &&
-             y == 'Density') {
-    return(plots[9])
-  } else if (x == 'Highest yearly earnings' &&
-             y == 'Category') {
-    return(plots[10])
-  } else if (x == 'Highest yearly earnings' &&
-             y == 'Country') {
-    return(plots[11])
-  } else if (x == 'Longitude' &&
-             y == 'Latitude') {
-    return(plots[12])
-  } else
-    return(plots[13])
-}
-
 
 # User Interface
 ui <- fluidPage(
@@ -146,13 +105,12 @@ ui <- fluidPage(
     sidebarPanel(
       selectInput("x_var", "Choose x variable:", x_variables),
       selectInput("y_var", "Choose y variable:", "None"),
-      conditionalPanel(
-        condition = "input.x_var == 'lowest_monthly_earnings' && input.y_var == 'density' || 
-                     input.x_var == 'highest_monthly_earnings' && input.y_var == 'density'",
-        sliderInput("binwidth", "Binwidth:", min = 10, max = 100, value = 30),
-        sliderInput("x_limit", "X-Axis Limit:", min = 0, max = 10000, value = c(0, 10000)),
-        sliderInput("y_limit", "Y-Axis Limit:", min = 0, max = 10000, value = c(0, 10000))
-      )
+      # conditionalPanel(
+      #   condition = "input.x_var == 'Lowest monthly earnings' && input.y_var == 'Density'",
+      #   sliderInput("binwidth", "Binwidth:", min = 0.1, max = 0.8, value =0.1),
+      #   sliderInput("x_limit", "X-Axis Limit:", min = 0, max = 800000, value = 500000),
+      #   sliderInput("y_limit", "Y-Axis Limit:", min = 0, max = 1, value = 0.8)
+      # )
     ),
     mainPanel(
       plotOutput("plot")
@@ -165,80 +123,237 @@ server <- function(input, output, session) {
 
   observe({
     updateSelectInput(session, "y_var", choices=determine_y(input$x_var))
-    
-    # Update binwidth and x y coordiante limit accordingly
-    if (plot_type=="Distribution of Lowest Monthly Earnings(Log-scale)") {
-      updateSliderInput(
-        session,
-        "binwidth",
-        min = 0.1,
-        max = 0.8,
-        value = 0.1
-      )
-      updateSliderInput(
-        session,
-        "x_limit",
-        min = 0.1,
-        max = 0.8,
-        value = 0.1
-      )
-    }else if (plot_type=="Distribution of Highest Monthly Earnings(Log-scale)") {
-      updateSliderInput(
-        session,
-        "binwidth",
-        min = 0.1,
-        max = 0.8,
-        value = 0.1
-      )
-      updateSliderInput(
-        session,
-        "x_limit",
-        min = 0.1,
-        max = 0.8,
-        value = 0.1
-      )
-    }
   })
   
   # Define functions for plotting
-  g1 <- function(df, x_var) {
+  g1 <- function(df){
     # Filter the dataset using the isBad indicator
-    df1 <- subset(df, df$Country_isBad == FALSE)
-    # Sort the data
-    dfsums <- table(df1$Country)
-    # Convert the table object into a data frame
-    countryf <- as.data.frame(dfsums)
-    # Define the column names
-    colnames(countryf) <- c("country", "count")
-    # Sort the data frame
-    countryf <- countryf %>% arrange(desc(countryf$count))
-    # Get unique country names
-    unique_countries <- unique(countryf$country)
-    # Select the first 25 unique country names
-    selected_countries <- unique_countries[1:25]
-    # Get all rows of the top 25 countries with the largest amount of famous channels
-    top_25_country <- subset(countryf, countryf$country %in% selected_countries)
-    # Sort the subset
-    top_25_country <- transform(top_25_country,
-                                country = reorder(country, count))
-    # Plot the bar chart
-    ggplot(top_25_country, aes_string(x = country, y = count)) +
-      geom_bar(stat = "identity", fill = my_color, alpha = 0.60) +
-      coord_flip() +
-      ggtitle("Number by Country (Top 25)") +
-      xlab(x_var)+
+    df1 <- subset(df, df$Country_isBad == FALSE & df$category_isBad == FALSE)
+    
+    # Select the first 15 unique country names
+    selected_countries <- unique_countries[1:15]
+    
+    # Get all rows of the top 15 countries with the largest amount of famous channels
+    top_15_country <- subset(df1, df1$Country %in% selected_countries)
+    
+    # Group country and category, then count the occurrences of each combination
+    df_grouped <- top_15_country %>% 
+      group_by(Abbreviation, category.fix) %>% 
+      summarise(count = n())
+    
+    ggplot(df_grouped, aes(x = Abbreviation, y = category.fix)) +
+      geom_count(aes(size = df_grouped$count, group = category.fix), color=my_color, alpha=0.7) +
+      scale_size_area(max_size=15, name="Channels") +
+      ggtitle("Category VS Country (Number of Channels)") +
+      xlab("Country") +
+      ylab("Category")+
       color_theme
   }
   
-  output$plot <- renderPlot({
-    # Determine the plot type
-    plot_type <- determine_type(input$x_var, input$y_var)
+  g2 <- function(df){
+    # Filter the dataset using the isBad indicator
+    df1 <- subset(df, df$category_isBad == FALSE)
     
-    if (plot_type == "Number of Channels by Country") {
-      g1(df, input$x_var)
-      print(g1)
-      
-    } else {
+    # Group country and category, then count the occurrences of each combination
+    df_grouped1 <- df1 %>% 
+      group_by(created_year, category.fix) %>% 
+      summarise(count = n())
+    
+    ggplot(df_grouped1, aes(x = created_year, y = category.fix)) +
+      geom_count(aes(size = df_grouped1$count, group = category.fix), color=my_color, alpha=0.7) +
+      scale_size_area(max_size=12, name="Channels") +
+      ggtitle("Category VS Created Year (Number of Channels)") +
+      color_theme
+  }
+  
+  g3 <- function(df){
+    # Filter the dataset using the isBad indicator
+    df1 <- subset(df, df$Country_isBad == FALSE & df$category_isBad == FALSE)
+    
+    # Select the first 15 unique country names
+    selected_countries <- unique_countries[1:15]
+    
+    # Get all rows of the top 15 countries with the largest amount of famous channels
+    top_15_country <- subset(df1, df1$Country %in% selected_countries)
+    
+    # Group country and category, then count the sum of subcribers for each combination
+    df_grouped2 <- top_15_country %>% 
+      group_by(Abbreviation, category.fix) %>% 
+      summarise(count = sum(subscribers))
+    
+    ggplot(df_grouped2, aes(x = Abbreviation, y = category.fix)) +
+      geom_count(aes(size = df_grouped2$count, group = category.fix), color=my_color, alpha=0.7) +
+      scale_size_area(max_size=15, name="Subscribers") +
+      ggtitle("Category VS Country (Number of Subscribers)") +
+      color_theme
+  }
+  
+  g4 <- function(df){
+    # Sort the data
+    dfsums <- table(df$category.fix)
+    
+    # Convert the table object into a data frame
+    categoryf <- as.data.frame(dfsums)
+    
+    # Define the column names
+    colnames(categoryf) <- c("category", "count")
+    
+    # Sort the data frame
+    categoryf <- transform(categoryf,
+                           category = reorder(category, count))
+    # Plot the bar chart
+    ggplot(categoryf) +
+      geom_bar(aes(x = category, y = count), stat = "identity", fill = my_color, alpha = 0.60) +
+      coord_flip() +
+      ggtitle("Number by Category") +
+      color_theme
+  }
+  
+  g5 <- function(df){
+    # Filter the dataset
+    df1 <- subset(df, df$uploads_isBad == FALSE)
+    
+    p1 <- ggplot(df1, aes(x = uploads, y = subscribers)) +
+      geom_point(color = my_color, alpha = 0.3) + 
+      labs(x = "") + # Hide x coordinate label
+      ggtitle("Number of Uploads VS Subscribers") +
+      color_theme
+    
+    p2 <- ggplot(df1, aes(x = uploads, y = subscribers)) +
+      geom_smooth() + 
+      color_theme
+    
+    grid.arrange(p1, p2, ncol=1)
+  }
+  
+  g6 <- function(df){
+    # Filter the dataset using the isBad indicators
+    df1 <- subset(df, df$uploads_isBad == FALSE & df$video.views_isBad == FALSE)
+    
+    p1 <- ggplot(df1, aes(x = uploads, y = video.views)) +
+      geom_point(color = my_color, alpha = 0.3) + 
+      labs(x = "") + # Hide x coordinate label
+      ggtitle("Number of Uploads VS Video Views") +
+      color_theme
+    
+    p2 <- ggplot(df1, aes(x = uploads, y = video.views)) +
+      geom_smooth() + 
+      color_theme
+    
+    grid.arrange(p1, p2, ncol=1)
+  }
+  
+  g7 <- function(df){
+    ggplot(df, aes(x = lowest_monthly_earnings)) +
+      geom_histogram(aes(y=..density..), binwidth= 0.1, fill = "grey") +
+      geom_density(color= my_color)+
+      scale_x_log10(breaks=c(100,2000,25000,200000))+
+      annotate("text", x = 100, y = 0.5, label = paste("The lowest monthly earnings peak"," at around 25000", sep="\n"))+
+      ggtitle("Distribution of Lowest Monthly Earnings (Log-scale)") +
+      color_theme
+  }
+  
+  g8 <- function(df) {
+    ggplot(df, aes(x = highest_monthly_earnings)) +
+      geom_histogram(aes(y = ..density..),
+                     binwidth = 0.1,
+                     fill = "grey") +
+      geom_density(color = my_color) +
+      scale_x_log10(breaks = c(100, 2000, 25000, 400000)) +
+      annotate(
+        "text",
+        x = 500,
+        y = 0.4,
+        label = paste("The highest monthly earnings peak", "at around 400000", sep =
+                        "\n")
+      ) +
+      ggtitle("Distribution of Highest Monthly Earnings (Log-scale)") +
+      color_theme
+  }
+  
+  g9 <- function(df){
+    # Calculate median for each category
+    df$median_earnings_category <- with(df, ave(highest_yearly_earnings, category.fix, FUN=median))
+    
+    # Create the boxplot
+    ggplot(df, aes(x = reorder(category.fix, median_earnings_category), y = highest_yearly_earnings)) +
+      geom_boxplot(outlier.shape = NA) +
+      geom_jitter(alpha = 0.2, color = my_color) +
+      coord_flip(ylim = c(0, 6e+07)) +
+      ggtitle("Highest Yearly Earnings by Category (by Median)") +
+      color_theme
+  }
+  
+  g10 <- function(df){
+    # Calculate median for each country
+    df$median_earnings_country <- with(df, ave(highest_yearly_earnings, Country.fix, FUN=median))
+    
+    # Sort the data frame 
+    df_median_earnings_country_des <- df %>% arrange(desc(median_earnings_country))
+    
+    # Get unique country names
+    unique_countries <- unique(df_median_earnings_country_des$Country)
+    
+    # Select the first 20 unique country names
+    selected_countries <- unique_countries[1:20]
+    
+    # Get all rows of the top 20 countries
+    top_20_country <- subset(df_median_earnings_country_des, df_median_earnings_country_des$Country %in% selected_countries)
+    
+    # Create the boxplot
+    ggplot(top_20_country, aes(x = highest_yearly_earnings, y = reorder(Country.fix, median_earnings_country))) +
+      geom_boxplot(outlier.shape = NA) +
+      geom_jitter(alpha = 0.3, color = my_color) +
+      coord_cartesian(xlim = c(0, 7e+07)) +
+      ggtitle("Highest Yearly Earnings by Country (Top 20 by Median)") +
+      color_theme
+  }
+  
+  g11 <- function(df){
+    # Data preparation
+    visit.x <- df$Longitude
+    visit.y <- df$Latitude  
+    
+    mp <- NULL #Create an empty map
+    mapworld <- borders("world",colour = "gray50",fill="white") #Draw the map
+    mp <- ggplot() + mapworld + ylim(-60, 90)
+    # Draw the points
+    mp2 <-
+      mp + geom_point(aes(
+        x = visit.x,
+        y = visit.y,
+        size = df$highest_yearly_earnings),
+        color = my_color) +
+      scale_size(range = c(4, 13)) +
+      ggtitle("Geospatial Information About Highest Yearly Earnings")
+    mp3 <- mp2 + color_theme + theme(legend.position = "none")
+    mp3
+  }
+  
+  output$plot <- renderPlot({
+    if(input$x_var == "Country" && input$y_var == "Category (number of channels)"){
+      g1(df)
+    }else if(input$x_var == "Created year" && input$y_var == "Category (number of channels)"){
+      g2(df)
+    }else if(input$x_var == "Country" && input$y_var == "Category (number of subscribers)"){
+      g3(df)
+    }else if(input$x_var == "Category" && input$y_var == "Number"){
+      g4(df)
+    }else if(input$x_var == "Number of uploads" && input$y_var == "Number of subscribers"){
+      g5(df)
+    }else if(input$x_var == "Number of uploads" && input$y_var == "Number of video views"){
+      g6(df)
+    }else if(input$x_var ==  "Lowest monthly earnings" && input$y_var == "Density"){
+      g7(df)
+    }else if(input$x_var ==  "Highest monthly earnings" && input$y_var == "Density"){
+      g8(df)
+    }else if(input$x_var ==  "Highest yearly earnings" && input$y_var == "Category"){
+      g9(df)
+    }else if(input$x_var ==  "Highest yearly earnings"&& input$y_var == "Country"){
+      g10(df)
+    }else if(input$x_var == "Longitude" && input$y_var == "Latitude"){
+      g11(df)
+    }else{
       
     }
   })
@@ -246,21 +361,3 @@ server <- function(input, output, session) {
 
 # Create Shiny App
 shinyApp(ui, server)
-
-# } else if (plot_type == "Category VS Country (Channels)") {
-#   ggplot(df, aes_string(x = input$x_var, y = input$y_var)) +
-#     geom_count() +
-#     xlab(input$x_var) +
-#     ylab(input$y_var)
-# } else if ((input$x_var == 'lowest_monthly_earnings' && input$y_var == 'density') || 
-#            (input$x_var == 'highest_monthly_earnings' && input$y_var == 'density')) {
-#   ggplot(df, aes_string(x = input$x_var)) +
-#     geom_histogram(binwidth = input$binwidth) +
-#     xlab(input$x_var) +
-#     ylab('Density')
-# } else {
-#   if (input$y_var != "None") {
-#     ggplot(df, aes_string(x = input$x_var, y = input$y_var)) +
-#       geom_point() +
-#       xlab(input$x_var) +
-#       ylab(input$y_var)
