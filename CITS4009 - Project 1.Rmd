@@ -211,7 +211,7 @@ ggplot(top_25_country) +
 Among those countries, the US, India, and Brazil have the most amount of leading YouTubers.
 
 
-## Relationship between category and country
+## Relationship of the number of channels between category and country
 Explore the relationship between categories and countries.
 ```{r}
 # Filter the dataset using the isBad indicator
@@ -230,35 +230,53 @@ df_grouped <- top_15_country %>%
 
 ggplot(df_grouped, aes(x = Abbreviation, y = category.fix)) +
   geom_count(aes(size = df_grouped$count, group = category.fix), color=my_color, alpha=0.7) +
-  scale_size_area(max_size=10, name="Amount") +
+  scale_size_area(max_size=10, name="Channels") +
   ggtitle("Category VS Country") +
   color_theme
 ```
 
 India and the US have similar trend of popular categories. Both of the two countries have more leading channels in People&Blogs, Music and Entertainment. Other countries do not have obvious channel preferences.
 
-## Relationship between category and created year
+## Relationship of the number of channels between category and created year
 Explore the relationship between categories and countries.
 ```{r}
 # Filter the dataset using the isBad indicator
 df1 <- subset(df, df$category_isBad == FALSE)
 
 # Group country and category, then count the occurrences of each combination
-df_grouped <- df1 %>% 
+df_grouped1 <- df1 %>% 
               group_by(created_year, category.fix) %>% 
               summarise(count = n())
 
-ggplot(df_grouped, aes(x = created_year, y = category.fix)) +
-  geom_count(aes(size = df_grouped$count, group = category.fix), color=my_color, alpha=0.7) +
-  scale_size_area(max_size=10, name="Amount") +
+ggplot(df_grouped1, aes(x = created_year, y = category.fix)) +
+  geom_count(aes(size = df_grouped1$count, group = category.fix), color=my_color, alpha=0.7) +
+  scale_size_area(max_size=10, name="Channels") +
   ggtitle("Category VS Created Year") +
   color_theme
 ```
+
 Music channels created between 2005 and 2016 were easier to stand out and attract subscribers. The number of prevalent music channels drastically reduced since 2016. In recent years, it has become harder for new music channels to develop into top channels. Entertainment channels and People&Blogs channels had the best performance among all new categories in the past 5 years. 
+
+## Relationship between the number of subscribers of each category and country
+Explore the relationship between categories and countries.
+```{r}
+# Group country and category, then count the sum of subcribers for each combination
+df_grouped2 <- top_15_country %>% 
+              group_by(Abbreviation, category.fix) %>% 
+              summarise(count = sum(subscribers))
+
+ggplot(df_grouped2, aes(x = Abbreviation, y = category.fix)) +
+  geom_count(aes(size = df_grouped2$count, group = category.fix), color=my_color, alpha=0.7) +
+  scale_size_area(max_size=10, name="Subscribers") +
+  ggtitle("Category VS Country") +
+  color_theme
+```
+
+Music and entertainment channels created in India and the US have the largestest total number of suscribers among those 15 countries, which are much larger than that of other countries.
 
 # Content strategy analysis
 
-## Popular channel category
+## Category of popular channels
 Using a bar chart makes it easy to compare different categories and can present a range of data effectively, is a better option compared with pie charts or donut charts when showing the relationship of each category. Plot the channel category to gain insights of popular categories.
 ```{r}
 # Sort the data
