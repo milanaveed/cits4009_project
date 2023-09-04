@@ -30,13 +30,10 @@ This data collection provides an opportunity to analyse and uncover valuable ins
 ```{r message=FALSE, warning=FALSE}
 library(ggplot2)
 library(gridExtra)
+library(GGally)
 library(dplyr)
 library(ggthemes)
-library(numform)
-library(treemapify)
-library(timeDate)
 library(lubridate)
-library(reshape2)
 library(ca)
 library(ggmap)
 library(sp)
@@ -55,7 +52,7 @@ color_theme <- theme_few() + # Theme based on S. Few's "Practical Rules for Usin
 
 ## Extracting data
 ```{r}
-data.path <- './data/youtube_UTF_8.csv'
+data.path <- './youtube_UTF_8.csv'
 df <- read.csv(data.path)
 ```
 
@@ -293,10 +290,10 @@ categoryf <- transform(categoryf,
                        category = reorder(category, count))
 # Plot the bar chart
 ggplot(categoryf) +
-  geom_bar(aes(x = category, y = count), stat = "identity", fill = my_color, alpha = 0.60) +
-  coord_flip() +
-  ggtitle("Number by Category") +
-  color_theme
+    geom_bar(aes(x = category, y = count), stat = "identity", fill = my_color, alpha = 0.60) +
+    coord_flip() +
+    ggtitle("Number by Category") +
+    color_theme
 ```
 
 We can see that Entertainment, Music, People & Blogs are the most popular categories among those leading channels we anaylse.
@@ -306,8 +303,9 @@ We can see that Entertainment, Music, People & Blogs are the most popular catego
 Use ggpairs() to gain a quick overview of the visualization and relationships among variables.
 ```{r}
 # Provide an overview of a set of visualization
-library(GGally)
-ggpairs(df[, c("subscribers","video.views","uploads")])
+ggpairs(
+  df[, c("subscribers", "video.views", "uploads")],
+  title = "Subscribers vs Video Views vs Uploads")
 ```
 
 Plot the relationship between uploads and subscribers.
