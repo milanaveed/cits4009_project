@@ -4,6 +4,8 @@ library(ggplot2)
 library(gridExtra)
 library(GGally)
 library(dplyr)
+library(bslib)
+
 library(ggthemes)
 library(lubridate)
 library(ca)
@@ -19,9 +21,10 @@ df <- read.csv("./youtube_UTF_8.csv")
 my_color <- "#2061F2"
 color_theme <-
   theme_few() + # Theme based on S. Few's "Practical Rules for Using Color in Charts"
-  theme(plot.title = element_text(color = my_color),
-        plot.margin = margin(10, 20, 10, 20)) +
-  theme(strip.text.x = element_text(size = 14, colour = "#202020"))
+  theme(plot.title = element_text(color = my_color, size=24),
+        plot.margin = margin(10, 20, 10, 20),
+        axis.text=element_text(size=14),
+        axis.title=element_text(size=17, colour = "#202020"))
 
 #------------------------ Data cleaning starts----------------------------
 # Dealing with missing values and invalid values
@@ -68,10 +71,7 @@ x_variables <-
 determine_y <- function(x) {
   switch(
     x,
-    'Country' = c(
-      'Category (number of channels)',
-      'Category (number of subscribers)'
-    ),
+    'Country' = c('Category'),
     'Created year' = c('Category (number of channels)'),
     'Category' = c('Number'),
     'Number of uploads' = c('Number of subscribers', 'Number of video views'),
@@ -83,37 +83,57 @@ determine_y <- function(x) {
 }
 
 # User Interface
-ui <- fluidPage(titlePanel('YouTube Statistics Plots'),
-                sidebarLayout(
-                  sidebarPanel(
-                    selectInput('x_var', 'Choose x variable:', x_variables),
-                    selectInput('y_var', 'Choose y variable:', 'Category (number of channels)'),
-                    conditionalPanel(
-                      condition = "input.x_var == 'Lowest monthly earnings' && input.y_var == 'Density'",
-                      sliderInput('binwidth','Binwidth:',min = 0.1,max = 0.8,value = 0.1,step = 0.05),
-                      sliderInput('x_limit','X-axis limit:',min = 0,max = 800000,value = 500000,step = 100000),
-                      sliderInput('y_limit','Y-axis limit:',min = 0,max = 1,value = 0.8,step = 0.05)
-                    ),
-                    conditionalPanel(
-                      condition = "input.x_var == 'Highest monthly earnings' && input.y_var == 'Density'",
-                      sliderInput('binwidth2','Binwidth:',min = 0.1,max = 0.8,value = 0.1,step = 0.05),
-                      sliderInput('x_limit2','X-axis limit:',min = 0,max = 10000000,value = 6000000,step = 500000),
-                      sliderInput('y_limit2','Y-axis limit:',min = 0,max = 1,value = 0.8,step = 0.05)
-                    )
-                  ),
-                  mainPanel(plotOutput('plot'))
-                ))
+ui <- fluidPage(
+  tags$head(
+    # Note the wrapping of the string in HTML()
+    tags$style(HTML("
+      @import url('https://fonts.googleapis.com/css2?family=Yusei+Magic&display=swap');
+      body {
+
+      }
+      h1 {
+        font - family:'Yusei Magic', sans - serif;
+      }
+      .shiny - input - container {
+        color:#474747;
+      }"))
+  ),
+  titlePanel('YouTube Statistics Plots'),
+  theme = bs_theme(version = 4, bootswatch = "flatly"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput('x_var', 'Choose x variable:', x_variables),
+      selectInput('y_var', 'Choose y variable:', 'Category (number of channels)'),
+      conditionalPanel(
+        condition = "input.x_var == 'Country'",
+        radioButtons('rb1', 'Choose the third dimension:', c('Number of channels', 'Number of subscribers'))
+      ),
+      conditionalPanel(
+        condition = "input.x_var == 'Lowest monthly earnings' &&
+ input.y_var == 'Density'",
+        sliderInput('binwidth','Binwidth:',min = 0.1,max = 0.8,value = 0.1,step = 0.05),
+        sliderInput('x_limit','X-axis limit:',min = 0,max = 800000,value = 500000,step = 100000),
+        sliderInput('y_limit','Y-axis limit:',min = 0,max = 1,value = 0.8,step = 0.05)
+      ),
+      conditionalPanel(
+        condition = "input.x_var == 'Highest monthly earnings' &&
+ input.y_var == 'Density'",
+        sliderInput('binwidth2','Binwidth:',min = 0.1,max = 0.8,value = 0.1,step = 0.05),
+        sliderInput('x_limit2','X-axis limit:',min = 0,max = 10000000,value = 6000000,step = 500000),
+        sliderInput('y_limit2','Y-axis limit:',min = 0,max = 1,value = 0.8,step = 0.05)
+      )
+    ),
+    mainPanel(plotOutput('plot'))
+  ))
+
 
 # Server logic
 server <- function(input, output, session) {
+  # Theme customization
+  #bs_themer(gfonts = TRUE, gfonts_update = FALSE)
+  
   observe({
     updateSelectInput(session, 'y_var', choices = determine_y(input$x_var))
-    
-    # if (input$x_var ==  'Highest monthly earnings' &&
-    #     input$y_var == 'Density') {
-    #   updateSliderInput(session, 'x_limit', value = , max = 1000000)
-    # }
-    
   })
   
   # Define functions for plotting
@@ -222,6 +242,8 @@ server <- function(input, output, session) {
         fill = my_color,
         alpha = 0.60
       ) +
+      xlab('Category') +
+      ylab('Number') +
       coord_flip() +
       ggtitle('Number by Category') +
       color_theme
@@ -233,15 +255,21 @@ server <- function(input, output, session) {
     
     p1 <- ggplot(df1, aes(x = uploads, y = subscribers)) +
       geom_point(color = my_color, alpha = 0.3) +
-      labs(x = '') + # Hide x coordinate label
+      geom_smooth() +
+      xlab('Number of uploads') + # Hide x coordinate label
+      ylab('Subscribers') + 
       ggtitle('Number of Uploads VS Subscribers') +
       color_theme
     
-    p2 <- ggplot(df1, aes(x = uploads, y = subscribers)) +
-      geom_smooth() +
-      color_theme
+    p1
     
-    grid.arrange(p1, p2, ncol = 1)
+    # p2 <- ggplot(df1, aes(x = uploads, y = subscribers)) +
+    #   geom_smooth() +
+    #   xlab('Number of uploads') +
+    #   ylab('Subscribers') + 
+    #   color_theme
+    # 
+    # grid.arrange(p1, p2, ncol = 1)
   }
   
   g6 <- function(df) {
@@ -379,15 +407,14 @@ server <- function(input, output, session) {
   }
   
   output$plot <- renderPlot({
-    if (input$x_var == 'Country' &&
-        input$y_var == 'Category (number of channels)') {
-      g1(df)
+    if (input$x_var == 'Country') {
+      if (input$rb1 == 'Number of channels') {
+        g1(df)
+      } else
+        g3(df)
     } else if (input$x_var == 'Created year' &&
                input$y_var == 'Category (number of channels)') {
       g2(df)
-    } else if (input$x_var == 'Country' &&
-               input$y_var == 'Category (number of subscribers)') {
-      g3(df)
     } else if (input$x_var == 'Category' &&
                input$y_var == 'Number') {
       g4(df)
@@ -412,11 +439,11 @@ server <- function(input, output, session) {
     } else if (input$x_var == 'Longitude' &&
                input$y_var == 'Latitude') {
       g11(df)
-    } else{
-      
     }
   })
 }
 
 # Create Shiny App
 shinyApp(ui, server)
+
+
