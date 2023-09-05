@@ -111,8 +111,14 @@ ui <- fluidPage(
       conditionalPanel(
         condition = "input.x_var == 'Number of uploads' &&
  input.y_var == 'Number of subscribers'",
-        sliderInput('x_limit0','X-axis limit:',min = 0,max = 3e+05,value = 2.5e+05,step = 5e+03),
-        sliderInput('y_limit0','Y-axis limit:',min = 0,max = 2.5e+08,value = 1.5e+08,step = 5e+06)
+        sliderInput('x_limit0','X-axis limit:',min = 500,max = 3e+05,value = 3e+05,step = 5e+03),
+        sliderInput('y_limit0','Y-axis limit:',min = 1.5e+07,max = 1.5e+08,value = 1.5e+08,step = 5e+06)
+      ),
+      conditionalPanel(
+        condition = "input.x_var == 'Number of uploads' &&
+ input.y_var == 'Number of video views'",
+        sliderInput('x_limit1','X-axis limit:',min = 500,max = 3e+05,value = 3e+05,step = 5e+03),
+        sliderInput('y_limit1','Y-axis limit:',min = 5e+09,max = 2e+11,value = 1e+11,step = 5e+09)
       ),
       conditionalPanel(
         condition = "input.x_var == 'Lowest monthly earnings' &&
@@ -256,44 +262,32 @@ server <- function(input, output, session) {
   }
   
   g5 <- function(df, x_limit, y_limit) {
-    # Filter the dataset
+    # Filter the dataset using the isBad indicators
     df1 <- subset(df, df$uploads_isBad == FALSE)
     
-    p1 <- ggplot(df1, aes(x = uploads, y = subscribers)) +
+    ggplot(df1, aes(x = uploads, y = subscribers)) +
       geom_point(color = my_color, alpha = 0.3) +
-      coord_cartesian(xlim = c(0, x_limit), ylim = c(0, y_limit)) +
+      geom_smooth(color = '#8B8682', fill = '#EEE5DE') +
+      coord_cartesian(xlim = c(0, x_limit), ylim = c(-3e+07, y_limit)) +
       xlab('Number of uploads') +
       ylab('Subscribers') + 
       ggtitle('Number of Uploads VS Subscribers') +
       color_theme
-    
-    p2 <- ggplot(df1, aes(x = uploads, y = subscribers)) +
-      geom_smooth(color = '#303030') +
-      coord_cartesian(xlim = c(0, x_limit), ylim = c(-3e+07,y_limit)) +
-      xlab('Number of uploads') +
-      ylab('Subscribers') +
-      color_theme
-
-    grid.arrange(p1, p2, ncol = 1)
   }
   
-  g6 <- function(df) {
+  g6 <- function(df, x_limit, y_limit) {
     # Filter the dataset using the isBad indicators
-    df1 <-
-      subset(df, df$uploads_isBad == FALSE &
+    df1 <- subset(df, df$uploads_isBad == FALSE &
                df$video.views_isBad == FALSE)
     
-    p1 <- ggplot(df1, aes(x = uploads, y = video.views)) +
+    ggplot(df1, aes(x = uploads, y = video.views)) +
       geom_point(color = my_color, alpha = 0.3) +
-      labs(x = '') + # Hide x coordinate label
+      geom_smooth(color = '#8B8682', fill = '#EEE5DE') +
+      coord_cartesian(xlim = c(0, x_limit), ylim = c(-1e+10, y_limit)) +
+      xlab('Number of uploads') +
+      ylab('Video views') +
       ggtitle('Number of Uploads VS Video Views') +
       color_theme
-    
-    p2 <- ggplot(df1, aes(x = uploads, y = video.views)) +
-      geom_smooth() +
-      color_theme
-    
-    grid.arrange(p1, p2, ncol = 1)
   }
   
   g7 <- function(df, bin, x_limit, y_limit) {
@@ -428,7 +422,7 @@ server <- function(input, output, session) {
       g5(df, input$x_limit0, input$y_limit0)
     } else if (input$x_var == 'Number of uploads' &&
                input$y_var == 'Number of video views') {
-      g6(df)
+      g6(df, input$x_limit1, input$y_limit1)
     } else if (input$x_var ==  'Lowest monthly earnings' &&
                input$y_var == 'Density') {
       g7(df, input$binwidth, input$x_limit, input$y_limit)
