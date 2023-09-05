@@ -103,10 +103,16 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       selectInput('x_var', 'Choose x variable:', x_variables),
-      selectInput('y_var', 'Choose y variable:', 'Category (number of channels)'),
+      selectInput('y_var', 'Choose y variable:', 'Category'),
       conditionalPanel(
         condition = "input.x_var == 'Country'",
         radioButtons('rb1', 'Choose the third dimension:', c('Number of channels', 'Number of subscribers'))
+      ),
+      conditionalPanel(
+        condition = "input.x_var == 'Number of uploads' &&
+ input.y_var == 'Number of subscribers'",
+        sliderInput('x_limit0','X-axis limit:',min = 0,max = 3e+05,value = 2.5e+05,step = 5e+03),
+        sliderInput('y_limit0','Y-axis limit:',min = 0,max = 2.5e+08,value = 1.5e+08,step = 5e+06)
       ),
       conditionalPanel(
         condition = "input.x_var == 'Lowest monthly earnings' &&
@@ -249,27 +255,26 @@ server <- function(input, output, session) {
       color_theme
   }
   
-  g5 <- function(df) {
+  g5 <- function(df, x_limit, y_limit) {
     # Filter the dataset
     df1 <- subset(df, df$uploads_isBad == FALSE)
     
     p1 <- ggplot(df1, aes(x = uploads, y = subscribers)) +
       geom_point(color = my_color, alpha = 0.3) +
-      geom_smooth() +
-      xlab('Number of uploads') + # Hide x coordinate label
+      coord_cartesian(xlim = c(0, x_limit), ylim = c(0, y_limit)) +
+      xlab('Number of uploads') +
       ylab('Subscribers') + 
       ggtitle('Number of Uploads VS Subscribers') +
       color_theme
     
-    p1
-    
-    # p2 <- ggplot(df1, aes(x = uploads, y = subscribers)) +
-    #   geom_smooth() +
-    #   xlab('Number of uploads') +
-    #   ylab('Subscribers') + 
-    #   color_theme
-    # 
-    # grid.arrange(p1, p2, ncol = 1)
+    p2 <- ggplot(df1, aes(x = uploads, y = subscribers)) +
+      geom_smooth(color = '#303030') +
+      coord_cartesian(xlim = c(0, x_limit), ylim = c(-3e+07,y_limit)) +
+      xlab('Number of uploads') +
+      ylab('Subscribers') +
+      color_theme
+
+    grid.arrange(p1, p2, ncol = 1)
   }
   
   g6 <- function(df) {
@@ -420,7 +425,7 @@ server <- function(input, output, session) {
       g4(df)
     } else if (input$x_var == 'Number of uploads' &&
                input$y_var == 'Number of subscribers') {
-      g5(df)
+      g5(df, input$x_limit0, input$y_limit0)
     } else if (input$x_var == 'Number of uploads' &&
                input$y_var == 'Number of video views') {
       g6(df)
