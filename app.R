@@ -1,3 +1,5 @@
+# Shiny Display Video: https://youtu.be/EHGK3SukHrg
+
 # Load required packages
 library(shiny)
 library(ggplot2)
@@ -5,7 +7,6 @@ library(gridExtra)
 library(GGally)
 library(dplyr)
 library(bslib)
-
 library(ggthemes)
 library(lubridate)
 library(ca)
@@ -88,9 +89,6 @@ ui <- fluidPage(
     # Note the wrapping of the string in HTML()
     tags$style(HTML("
       @import url('https://fonts.googleapis.com/css2?family=Yusei+Magic&display=swap');
-      body {
-
-      }
       h1 {
         font - family:'Yusei Magic', sans - serif;
       }
@@ -124,15 +122,15 @@ ui <- fluidPage(
         condition = "input.x_var == 'Lowest monthly earnings' &&
  input.y_var == 'Density'",
         sliderInput('binwidth','Binwidth:',min = 0.1,max = 0.8,value = 0.1,step = 0.05),
-        sliderInput('x_limit','X-axis limit:',min = 0,max = 800000,value = 500000,step = 100000),
-        sliderInput('y_limit','Y-axis limit:',min = 0,max = 1,value = 0.8,step = 0.05)
+        sliderInput('x_limit2','X-axis limit:',min = 0,max = 800000,value = 500000,step = 100000),
+        sliderInput('y_limit2','Y-axis limit:',min = 0,max = 1,value = 0.8,step = 0.05)
       ),
       conditionalPanel(
         condition = "input.x_var == 'Highest monthly earnings' &&
  input.y_var == 'Density'",
         sliderInput('binwidth2','Binwidth:',min = 0.1,max = 0.8,value = 0.1,step = 0.05),
-        sliderInput('x_limit2','X-axis limit:',min = 0,max = 10000000,value = 6000000,step = 500000),
-        sliderInput('y_limit2','Y-axis limit:',min = 0,max = 1,value = 0.8,step = 0.05)
+        sliderInput('x_limit3','X-axis limit:',min = 0,max = 10000000,value = 6000000,step = 500000),
+        sliderInput('y_limit3','Y-axis limit:',min = 0,max = 1,value = 0.8,step = 0.05)
       )
     ),
     mainPanel(plotOutput('plot'))
@@ -306,6 +304,8 @@ server <- function(input, output, session) {
                         '\n')
       ) +
       ggtitle('Distribution of Lowest Monthly Earnings (Log-scale)') +
+      xlab('Lowest monthly earnings') +
+      ylab('Density') +
       color_theme
   }
   
@@ -325,6 +325,8 @@ server <- function(input, output, session) {
                         '\n')
       ) +
       ggtitle('Distribution of Highest Monthly Earnings (Log-scale)') +
+      xlab('Highest monthly earnings') +
+      ylab('Density') +
       color_theme
   }
   
@@ -343,6 +345,8 @@ server <- function(input, output, session) {
       geom_jitter(alpha = 0.2, color = my_color) +
       coord_flip(ylim = c(0, 6e+07)) +
       ggtitle('Highest Yearly Earnings by Category (by Median)') +
+      xlab('Highest yearly earnings') +
+      ylab('Category') +
       color_theme
   }
   
@@ -379,6 +383,8 @@ server <- function(input, output, session) {
       geom_jitter(alpha = 0.3, color = my_color) +
       coord_cartesian(xlim = c(0, 7e+07)) +
       ggtitle('Highest Yearly Earnings by Country (Top 20 by Median)') +
+      xlab('Highest yearly earnings') +
+      ylab('Country') +
       color_theme
   }
   
@@ -400,7 +406,9 @@ server <- function(input, output, session) {
       ),
       color = my_color) +
       scale_size(range = c(4, 13)) +
-      ggtitle('Geospatial Information About Highest Yearly Earnings')
+      ggtitle('Geospatial Information About Highest Yearly Earnings') +
+      xlab('Longitude') +
+      ylab('Latitude')
     mp3 <- mp2 + color_theme + theme(legend.position = 'none')
     mp3
   }
@@ -425,10 +433,10 @@ server <- function(input, output, session) {
       g6(df, input$x_limit1, input$y_limit1)
     } else if (input$x_var ==  'Lowest monthly earnings' &&
                input$y_var == 'Density') {
-      g7(df, input$binwidth, input$x_limit, input$y_limit)
+      g7(df, input$binwidth, input$x_limit2, input$y_limit2)
     } else if (input$x_var ==  'Highest monthly earnings' &&
                input$y_var == 'Density') {
-      g8(df, input$binwidth2, input$x_limit2, input$y_limit2)
+      g8(df, input$binwidth2, input$x_limit3, input$y_limit3)
     } else if (input$x_var ==  'Highest yearly earnings' &&
                input$y_var == 'Category') {
       g9(df)
