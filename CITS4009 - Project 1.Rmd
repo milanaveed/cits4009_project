@@ -59,19 +59,19 @@ df <- read.csv(data.path)
 ## Data Overview
 
 ### Using str() to gain an overview
-```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+```{r message=FALSE, warning=FALSE, results = 'hide'}
 str(df)
 ```
 There are 995 obs of 28 variables in this date set, consisting of 7 character types, 4 integers and 17 numeric variables. 
 
 ### Using summary() to analyze the data
-```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+```{r message=FALSE, warning=FALSE, results = 'hide'}
 summary(df)
 ```
 Some variables have big differences between the minimum value and the maximum value and are highly right-skewed, for example, "uploads", "subscribers", "lowest_monthly_earnings", "highest_monthly_earnings" and etc.
 
 ### Using head() to view the data
-```{r  message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+```{r  message=FALSE, warning=FALSE, results = 'hide'}
 head(df)
 ```
 From the first 6 rows of the data, we can discover some missing values or invalid values which we will convert later according to the need of plotting.
@@ -98,7 +98,7 @@ Now we have converted those invalid values into NA.
 
 #### Cleaning column category
 When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Category](#earnings-by-category), some values of `nan` were involved initially. We first turn them into NA values.
-```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+```{r message=FALSE, warning=FALSE, results = 'hide'}
 df <- mutate(df,
              category = ifelse(category=="nan", NA, category))
 df %>% count(category)
@@ -107,7 +107,7 @@ After inspecting the occurrences of each value in the column category, we found 
 
 #### Cleaning column Country
 When conducting the earnings analysis and plotting the [Highest Yearly Earnings by Country](#earnings-by-country), some values of `nan` were involved initially. We first turn them into NA values.
-```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+```{r message=FALSE, warning=FALSE, results = 'hide'}
 df <- mutate(df,
              Country = ifelse(Country=="nan", NA, Country))
 df %>% count(Country)
@@ -123,7 +123,7 @@ df <- mutate(df,
 
 #### Dealing with invalid values in column video.views
 According to common sense and through observation of the dataset, some values in the `video.views` are distinctively smaller than others. We turn those abnormal values into NAs.
-```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+```{r message=FALSE, warning=FALSE, results = 'hide'}
 df <- mutate(df,
              video.views = ifelse(video.views<1000000, NA, video.views))
 df %>% count(df$video.views)
@@ -488,10 +488,3 @@ mp3
 ```
 
 Channels with high yearly earnings are mainly located in Europe, South Africa, the middle east and the South-East Asia.
-
-
-
-# Code for Shiny App
-```{r}
-
-```
